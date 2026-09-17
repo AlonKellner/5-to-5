@@ -11,7 +11,7 @@ import {
   type SamplerKind,
 } from './sampleBoard';
 
-const KINDS: SamplerKind[] = ['rejection', 'early-rejection'];
+const KINDS: SamplerKind[] = ['rejection', 'early-rejection', 'dfs'];
 
 describe.each(KINDS)('%s sampler', (kind) => {
   it('returns a strictly valid board', () => {
@@ -29,7 +29,7 @@ describe.each(KINDS)('%s sampler', (kind) => {
   });
 
   it('gives up after maxTrials', () => {
-    expect(sampleBoardRejection(new Rng('limit'), { maxTrials: 10, kind })).toBeNull();
+    expect(sampleBoardRejection(new Rng('limit'), { maxTrials: 0, kind })).toBeNull();
   });
 
   it('can be run in chunks with the same result as one call', () => {

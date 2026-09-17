@@ -1,6 +1,8 @@
 import type { Board } from '../board';
 import { ALL_COLORS_MASK, CELL_COUNT, COLOR_COUNT, SIZE, TILES_PER_COLOR } from '../constants';
+import { emptyClueSet } from '../clues';
 import type { Rng } from '../rng';
+import { countSolutions } from '../solver/search';
 import { isValidBalancedBoard, neighborMask, rulesetFromAnalysis } from '../validator';
 
 const FIVES = [5, 5, 5, 5, 5];
@@ -120,15 +122,49 @@ export class EarlyRejectionSampler implements BoardSampler {
   }
 }
 
+/**
+ * Fast but biased: a solver run with a randomized color order returns the first valid board it
+ * reaches. Each trial is one search capped at `nodesPerTrial` nodes.
+ */
+export class DfsSampler implements BoardSampler {
+  trials = 0;
+
+  constructor(
+    private readonly rng: Rng,
+    private readonly nodesPerTrial = 2000,
+  ) {}
+
+  run(maxTrials: number): Board | null {
+    for (let t = 0; t < maxTrials; t++) {
+      this.trials++;
+      const result = countSolutions(emptyClueSet(), {
+        limit: 1,
+        collect: true,
+        rng: this.rng,
+        maxNodes: this.nodesPerTrial,
+      });
+      if (result.count > 0) return result.solutions[0]!;
+    }
+    return null;
+  }
+}
+
 export interface SampleResult {
   board: Board;
   trials: number;
 }
 
-export type SamplerKind = 'rejection' | 'early-rejection';
+export type SamplerKind = 'rejection' | 'early-rejection' | 'dfs';
 
 export function createSampler(kind: SamplerKind, rng: Rng): BoardSampler {
-  return kind === 'rejection' ? new RejectionSampler(rng) : new EarlyRejectionSampler(rng);
+  switch (kind) {
+    case 'rejection':
+      return new RejectionSampler(rng);
+    case 'early-rejection':
+      return new EarlyRejectionSampler(rng);
+    case 'dfs':
+      return new DfsSampler(rng);
+  }
 }
 
 export function sampleBoardRejection(
