@@ -23,29 +23,35 @@ export function mountLayout(root: HTMLElement): void {
 
       <div id="status" class="status" aria-live="polite"></div>
 
-      <div class="panel">
-        <div id="game-board" class="grid5"></div>
-        <div id="relationship-clues-container" class="overlay grid5"></div>
-      </div>
+      <div class="play-area">
+        <section class="board-column">
+          <div class="panel">
+            <div id="game-board" class="grid5"></div>
+            <div id="relationship-clues-container" class="overlay grid5 rows5"></div>
+          </div>
 
-      <div id="bottom-controls" class="toolbar">
-        <button id="checkpoint-btn" class="btn btn-purple">Checkpoint</button>
-        <button id="restore-btn" class="btn btn-pink" hidden>Restore</button>
-      </div>
+          <div id="bottom-controls" class="toolbar">
+            <button id="checkpoint-btn" class="btn btn-purple">Checkpoint</button>
+            <button id="restore-btn" class="btn btn-pink" hidden>Restore</button>
+          </div>
+        </section>
 
-      <div class="panel">
-        <div id="spawner-grid" class="grid5"></div>
-        <div id="spawner-clues-container" class="overlay grid5"></div>
-      </div>
+        <section class="tray-column">
+          <div class="panel">
+            <div id="spawner-grid" class="grid5"></div>
+            <div id="spawner-clues-container" class="overlay grid5 rows1"></div>
+          </div>
 
-      <div class="panel">
-        <div id="spawner-notes-grid" class="grid5"></div>
-      </div>
+          <div class="panel">
+            <div id="spawner-notes-grid" class="grid5"></div>
+          </div>
 
-      <footer class="footer">
-        <span id="puzzle-info"></span>
-        <button id="share-btn" class="btn btn-gray">Copy link</button>
-      </footer>
+          <footer class="footer">
+            <span id="puzzle-info"></span>
+            <button id="share-btn" class="btn btn-gray">Copy link</button>
+          </footer>
+        </section>
+      </div>
     </main>
 
     <div id="win-modal" class="modal" role="dialog" aria-modal="true" hidden>

@@ -68,6 +68,31 @@ body {
   }
 }
 
+.play-area {
+  display: flex;
+  flex-direction: column;
+}
+
+/* On wide screens the tray sits beside the board, so both fit on screen while dragging. */
+@media (min-width: 900px) {
+  .container {
+    max-width: 64rem;
+  }
+  .play-area {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+  .board-column {
+    flex: 0 0 clamp(20rem, calc(100vh - 14rem), 36rem);
+  }
+  .tray-column {
+    flex: 1 1 0;
+    max-width: 26rem;
+  }
+}
+
 .header {
   text-align: center;
   margin-bottom: 1rem;
@@ -203,6 +228,14 @@ body {
   position: absolute;
   inset: 0.5rem;
   pointer-events: none;
+}
+
+.overlay.rows5 {
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+}
+
+.overlay.rows1 {
+  grid-template-rows: minmax(0, 1fr);
 }
 
 @media (min-width: 640px) {

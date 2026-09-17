@@ -24,10 +24,12 @@
     "exp:enumerate": "tsx scripts/experiments/enumerate.ts",
     "exp:bias": "tsx scripts/experiments/bias.ts",
     "exp:dig": "tsx scripts/experiments/dig.ts",
-    "exp:calibrate": "tsx scripts/experiments/difficulty-calibration.ts"
+    "exp:calibrate": "tsx scripts/experiments/difficulty-calibration.ts",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^22.20.3",
     "@vitest/coverage-v8": "^5.0.1",
     "eslint": "^10.10.0",

@@ -6,3 +6,5 @@ coverage
 docs/experiments/data
 .claude/settings.local.json
 /settings.json
+test-results
+playwright-report
