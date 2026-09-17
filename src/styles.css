@@ -346,12 +346,18 @@ body {
 
 .relation-slot.edge-start {
   justify-content: flex-start;
-  transform: translateX(calc(-50% - var(--gap) / 2 + 12px));
+}
+
+.relation-slot.edge-start .relationship-clue {
+  transform: translateX(calc(-50% - var(--gap) / 2));
 }
 
 .relation-slot.edge-end {
   justify-content: flex-end;
-  transform: translateX(calc(50% + var(--gap) / 2 - 12px));
+}
+
+.relation-slot.edge-end .relationship-clue {
+  transform: translateX(calc(50% + var(--gap) / 2));
 }
 
 .note-cell {
