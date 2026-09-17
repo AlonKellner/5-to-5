@@ -10,6 +10,7 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.test.ts', 'src/main.ts', 'src/worker/generator.worker.ts'],
       reporter: ['text', 'html'],
+      thresholds: { statements: 90, branches: 85, functions: 90, lines: 90 },
     },
   },
 });
