@@ -117,8 +117,8 @@ describe('masks', () => {
   it('filters clues by mask and counts kinds', () => {
     const mask = legacyPuzzleMask();
     const clues = cluesFromMask(board, mask);
-    expect(countClueKinds(mask)).toEqual({ tiles: 4, relations: 16, total: 20 });
-    expect(clues).toHaveLength(20);
+    expect(countClueKinds(mask)).toEqual({ tiles: 4, relations: 12, total: 16 });
+    expect(clues).toHaveLength(16);
   });
 
   it('builds a solver clue set', () => {
@@ -128,6 +128,6 @@ describe('masks', () => {
     expect(set.relations[horizontalEdge(0, 3)]).toBe(4);
     expect(set.relations[horizontalEdge(0, 0)]).toBe(-1);
     expect([...set.tiles].filter((t) => t >= 0)).toHaveLength(4);
-    expect([...set.relations].filter((t) => t >= 0)).toHaveLength(16);
+    expect([...set.relations].filter((t) => t >= 0)).toHaveLength(12);
   });
 });

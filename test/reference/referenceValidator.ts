@@ -26,9 +26,7 @@ export function referenceDeriveRuleset(cells: readonly number[]): ReferenceRules
   const never: number[] = [];
   for (let color = 0; color < 5; color++) {
     const positions = cells.flatMap((c, i) => (c === color ? [i] : []));
-    const neighborSets = positions.map(
-      (p) => new Set(referenceNeighbors(p).map((n) => cells[n]!)),
-    );
+    const neighborSets = positions.map((p) => new Set(referenceNeighbors(p).map((n) => cells[n]!)));
     const common = [0, 1, 2, 3, 4].filter((c) => neighborSets.every((s) => s.has(c)));
     const missing = [0, 1, 2, 3, 4].filter((c) => neighborSets.every((s) => !s.has(c)));
     if (common.length !== 1 || missing.length !== 1) return null;

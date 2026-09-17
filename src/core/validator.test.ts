@@ -9,19 +9,14 @@ import {
   SOLVER_TEST_SOLUTION,
 } from '../../test/fixtures/legacy';
 import { referenceDeriveRuleset } from '../../test/reference/referenceValidator';
-import {
-  createBoard,
-  parseBoard,
-  permuteColors,
-  SYMMETRIES,
-  transformBoard,
-} from './board';
+import { createBoard, parseBoard, permuteColors, SYMMETRIES, transformBoard } from './board';
 import { PERMUTATIONS, permuteRuleset } from './rules';
 import { Rng } from './rng';
 import {
   analyzeBoard,
   boardViolations,
   deriveRuleset,
+  isValidBalancedBoard,
   isValidBoard,
   rulesetFromAnalysis,
 } from './validator';
@@ -105,7 +100,11 @@ describe('validator agrees with an independent reference implementation', () => 
         [cells[a], cells[b]] = [cells[b]!, cells[a]!];
       }
       const board = createBoard(cells);
-      expect(deriveRuleset(board)).toEqual(referenceDeriveRuleset(cells));
+      const expected = referenceDeriveRuleset(cells);
+      expect(deriveRuleset(board)).toEqual(expected);
+      if (cells.filter((c) => c === 0).length === 5) {
+        expect(isValidBalancedBoard(board)).toBe(expected !== null);
+      }
     }
   });
 });

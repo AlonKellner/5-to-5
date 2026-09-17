@@ -1,5 +1,11 @@
 import { createBoard, type Board } from '../../src/core/board';
-import { emptyMask, horizontalEdge, slotOfEdge, verticalEdge, type ClueMask } from '../../src/core/clues';
+import {
+  emptyMask,
+  horizontalEdge,
+  slotOfEdge,
+  verticalEdge,
+  type ClueMask,
+} from '../../src/core/clues';
 import type { Puzzle } from '../../src/core/puzzle';
 import {
   flat,
