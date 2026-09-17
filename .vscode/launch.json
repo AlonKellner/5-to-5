@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug app in Chrome (run `npm run dev` first)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173/5-to-5/",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "Debug current test file",
+      "type": "node",
+      "request": "launch",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "${relativeFile}"],
+      "smartStep": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Generate a puzzle (CLI)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+      "args": ["scripts/cli.ts", "--seed", "debug", "--difficulty", "medium", "--stats"],
+      "console": "integratedTerminal"
+    }
+  ]
+}
