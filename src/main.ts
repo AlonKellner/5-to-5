@@ -13,6 +13,13 @@ const app = new App({
   onUrlChange: (url) => window.history.replaceState(null, '', url),
   newSeed: randomSeed,
   clipboard: navigator.clipboard,
+  storage: (() => {
+    try {
+      return window.localStorage;
+    } catch {
+      return null;
+    }
+  })(),
 });
 
 void app.start();

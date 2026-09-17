@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { legacyPuzzle } from '../../test/fixtures/legacyPuzzle';
+import { permuteColors } from '../core/board';
 import { encodePuzzle } from '../core/codec';
 import type { DifficultyLevel, Puzzle } from '../core/puzzle';
 import { Rng } from '../core/rng';
 import type { PuzzleSource } from '../worker/client';
-import { App } from './app';
+import { App, STORAGE_KEY } from './app';
 
 const solution = legacyPuzzle().solution;
 const rating = {
@@ -16,9 +17,10 @@ const rating = {
 
 class FakeSource implements PuzzleSource {
   calls: { seed: string; difficulty: DifficultyLevel }[] = [];
+  next = legacyPuzzle();
   async generate(seed: string, difficulty: DifficultyLevel): Promise<Puzzle> {
     this.calls.push({ seed, difficulty });
-    return { ...legacyPuzzle(), seed, rating: { ...rating, level: difficulty } };
+    return { ...this.next, seed, rating: { ...rating, level: difficulty } };
   }
 }
 
@@ -38,6 +40,7 @@ describe('App', () => {
   let app: App;
   let hitTarget: Element | null;
   let urls: URL[];
+  let storage: Map<string, string> & Pick<Storage, 'getItem' | 'setItem'>;
 
   function drag(from: Element, to: Element) {
     hitTarget = to;
@@ -57,6 +60,7 @@ describe('App', () => {
       onUrlChange: (u) => urls.push(u),
       newSeed: () => 'fresh-seed',
       clipboard: { writeText: vi.fn(async () => undefined) },
+      storage,
     });
     await app.start();
   }
@@ -66,6 +70,14 @@ describe('App', () => {
     source = new FakeSource();
     hitTarget = null;
     urls = [];
+    storage = Object.assign(new Map<string, string>(), {
+      getItem(this: Map<string, string>, key: string) {
+        return this.get(key) ?? null;
+      },
+      setItem(this: Map<string, string>, key: string, value: string) {
+        this.set(key, value);
+      },
+    });
     await startApp();
   });
 
@@ -269,6 +281,40 @@ describe('App', () => {
       source = new FakeSource();
       await startApp('https://example.com/?p=garbage');
       expect(source.calls).toHaveLength(1);
+    });
+  });
+
+  describe('persistence', () => {
+    const reload = async (url: string) => {
+      app.destroy();
+      document.body.innerHTML = '<div id="app"></div>';
+      await startApp(url);
+    };
+
+    it('restores tiles, notes and checkpoints after reloading the same puzzle', async () => {
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      $('#checkpoint-btn').click();
+      cell(2).click();
+      ($$('.note-option')[1] as HTMLElement).click();
+      await reload(urls.at(-1)!.toString());
+      expect(source.calls).toHaveLength(1);
+      expect(cell(0).classList.contains('color-0')).toBe(true);
+      expect(cell(2).querySelectorAll('.note-dot')).toHaveLength(1);
+      expect($('#restore-btn').hidden).toBe(false);
+    });
+
+    it('starts fresh for a different puzzle', async () => {
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      source.next = { ...legacyPuzzle(), solution: permuteColors(solution, [1, 2, 3, 4, 0]) };
+      $('#new-btn').click();
+      await vi.waitFor(() => expect(source.calls).toHaveLength(2));
+      await vi.waitFor(() => expect(cell(0).classList.contains('drop-zone')).toBe(true));
+    });
+
+    it('ignores corrupt saved data', async () => {
+      storage.set(STORAGE_KEY, '{not json');
+      await reload(urls.at(-1)!.toString());
+      expect($$('#game-board > *')).toHaveLength(25);
     });
   });
 });

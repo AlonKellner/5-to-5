@@ -4,6 +4,7 @@ import { Rng } from '../core/rng';
 import {
   canHint,
   createGame,
+  deserializeGame,
   moveTile,
   placeFromTray,
   restoreCheckpoint,
@@ -11,6 +12,7 @@ import {
   revealHint,
   revealSolution,
   saveCheckpoint,
+  serializeGame,
   toggleGridNote,
   toggleSpawnerNote,
   trayCount,
@@ -207,5 +209,34 @@ describe('winning and revealing', () => {
     expect([...s.cells]).toEqual([...solution]);
     expect(s.locked.every((l) => l === 1)).toBe(true);
     expect(s.status).toBe('revealed');
+  });
+});
+
+describe('serialization', () => {
+  it('round-trips tiles, hints, notes, checkpoint and status', () => {
+    let s = createGame(puzzle);
+    s = placeFromTray(s, 0, 0);
+    s = toggleGridNote(s, 2, 3);
+    s = toggleSpawnerNote(s, 1, 1, 4);
+    s = saveCheckpoint(s);
+    s = revealHint(s, new Rng('ser'));
+    const restored = deserializeGame(puzzle, JSON.parse(JSON.stringify(serializeGame(s))));
+    expect(restored).not.toBeNull();
+    expect([...restored!.cells]).toEqual([...s.cells]);
+    expect([...restored!.locked]).toEqual([...s.locked]);
+    expect([...restored!.gridNotes]).toEqual([...s.gridNotes]);
+    expect([...restored!.spawnerNotes]).toEqual([...s.spawnerNotes]);
+    expect([...restored!.checkpoint!.cells]).toEqual([...s.checkpoint!.cells]);
+    expect(restored!.status).toBe(s.status);
+  });
+
+  it('rejects malformed or inconsistent data', () => {
+    const good = serializeGame(placeFromTray(createGame(puzzle), 0, 0));
+    expect(deserializeGame(puzzle, null)).toBeNull();
+    expect(deserializeGame(puzzle, { ...good, cells: [1, 2, 3] })).toBeNull();
+    expect(deserializeGame(puzzle, { ...good, cells: good.cells.map(() => 9) })).toBeNull();
+    // A clue tile of the puzzle must stay locked in place.
+    expect(deserializeGame(puzzle, { ...good, locked: good.locked.map(() => 0) })).toBeNull();
+    expect(deserializeGame(puzzle, { ...good, status: 'bogus' })).toBeNull();
   });
 });

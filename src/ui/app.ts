@@ -6,11 +6,13 @@ import { Rng } from '../core/rng';
 import {
   canHint,
   createGame,
+  deserializeGame,
   restoreCheckpoint,
   returnToTray,
   revealHint,
   revealSolution,
   saveCheckpoint,
+  serializeGame,
   SPAWNER_NOTE_SLOTS,
   toggleGridNote,
   toggleSpawnerNote,
@@ -33,7 +35,11 @@ export interface AppOptions {
   newSeed: () => string;
   hitTest?: DragControllerOptions['hitTest'];
   clipboard?: { writeText(text: string): Promise<void> };
+  /** Keeps the current game across reloads. */
+  storage?: Pick<Storage, 'getItem' | 'setItem'> | null;
 }
+
+export const STORAGE_KEY = '5-to-5:game';
 
 const DEFAULT_DIFFICULTY: DifficultyLevel = 'medium';
 
@@ -53,6 +59,7 @@ function describeProgress(difficulty: DifficultyLevel, progress?: GenerateProgre
 export class App {
   private state: GameState | null = null;
   private puzzle: Puzzle | null = null;
+  private puzzleCode = '';
   private difficulty: DifficultyLevel = DEFAULT_DIFFICULTY;
   private readonly notesMenu: NotesMenu;
   private readonly detachDrag: () => void;
@@ -159,10 +166,12 @@ export class App {
       ? `${capitalize(puzzle.rating.level)} · score ${puzzle.rating.score}`
       : '';
     this.el['win-modal']!.hidden = true;
-    this.setState(createGame(puzzle));
+    this.puzzleCode = encodePuzzle(puzzle);
+    this.state = null;
+    this.setState(this.savedGame(puzzle) ?? createGame(puzzle));
     const url = new URL(this.options.url);
     url.search = '';
-    url.searchParams.set('p', encodePuzzle(puzzle));
+    url.searchParams.set('p', this.puzzleCode);
     url.searchParams.set('d', this.difficulty);
     this.options.url = url;
     this.options.onUrlChange?.(url);
@@ -179,6 +188,29 @@ export class App {
     if (previous?.status === 'playing' && next.status === 'won')
       this.el['win-modal']!.hidden = false;
     this.render();
+    this.save(next);
+  }
+
+  private savedGame(puzzle: Puzzle): GameState | null {
+    try {
+      const raw = this.options.storage?.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const saved = JSON.parse(raw) as { code?: string; game?: unknown };
+      return saved.code === this.puzzleCode ? deserializeGame(puzzle, saved.game) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private save(state: GameState): void {
+    try {
+      this.options.storage?.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ code: this.puzzleCode, game: serializeGame(state) }),
+      );
+    } catch {
+      // Storage can be unavailable (private browsing, quota); the game still works without it.
+    }
   }
 
   private render(): void {

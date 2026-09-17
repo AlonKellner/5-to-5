@@ -3,7 +3,7 @@
 A deduction puzzle: place 5 tiles of each of 5 colors on a 5×5 board. Every color follows two
 hidden rules, and you have to work them out from the clues.
 
-**Play:** https://alonkellner.github.io/5-to-5/
+**Play:** https://alonkellner.com/5-to-5/
 
 ## Rules
 
