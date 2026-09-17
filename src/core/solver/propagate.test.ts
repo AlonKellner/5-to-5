@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { emptyClueSet, horizontalEdge } from '../clues';
+import { legacySolution } from '../../../test/fixtures/legacyPuzzle';
+import { clueSetFromMask, emptyClueSet, horizontalEdge } from '../clues';
+import { digClues } from '../generator/dig';
+import { Rng } from '../rng';
+import { solveByPropagation } from './search';
 import { createState, MUST, NEVER } from './state';
 import { LEVEL, propagate } from './propagate';
 
@@ -165,5 +169,33 @@ describe('level 3: exactness', () => {
     });
     expect(propagate(state.slice(), clues, LEVEL.MUST)).toBe(true);
     expect(propagate(state, clues, LEVEL.EXACT)).toBe(false);
+  });
+});
+
+describe('level 4: probing', () => {
+  const solution = legacySolution();
+
+  it('never eliminates the intended solution of a unique puzzle', () => {
+    const rng = new Rng('probe-sound');
+    for (let k = 0; k < 6; k++) {
+      const { mask } = digClues(solution, rng, { criterion: { kind: 'unique' } });
+      const clues = clueSetFromMask(solution, mask);
+      const state = createState(clues);
+      expect(propagate(state, clues, LEVEL.PROBE)).toBe(true);
+      for (let i = 0; i < 25; i++) expect(state[i]! & (1 << solution[i]!)).not.toBe(0);
+    }
+  });
+
+  it('solves puzzles that level 3 alone cannot', () => {
+    let needsProbing = 0;
+    for (let k = 0; k < 8; k++) {
+      const { mask } = digClues(solution, new Rng(`probe-${k}`), {
+        criterion: { kind: 'propagation', level: LEVEL.PROBE },
+      });
+      const clues = clueSetFromMask(solution, mask);
+      expect(solveByPropagation(clues, LEVEL.PROBE).solved).toBe(true);
+      if (!solveByPropagation(clues, LEVEL.EXACT).solved) needsProbing++;
+    }
+    expect(needsProbing).toBeGreaterThan(0);
   });
 });

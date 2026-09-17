@@ -1,0 +1,11 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`measureDifficulty > measures the legacy puzzle 1`] = `
+{
+  "guessDepth": 3,
+  "nodes": 7,
+  "propagationLevel": 4,
+  "relationClues": 12,
+  "tileClues": 4,
+}
+`;

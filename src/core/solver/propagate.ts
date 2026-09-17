@@ -8,7 +8,8 @@ import {
 } from '../constants';
 import { VALID_RULESETS } from '../rules';
 import { bitIndex, isSingleton, POPCOUNT, ROTATE } from './bits';
-import { MUST, NEVER, type SolverState } from './state';
+import { deriveRuleset } from '../validator';
+import { boardOfSolvedState, MUST, NEVER, STATE_SIZE, type SolverState } from './state';
 
 /** Deduction strength; each level includes all lower ones. */
 export const LEVEL = {
@@ -20,8 +21,12 @@ export const LEVEL = {
   MUST: 2,
   /** Exactness: only one color may be missing / common for each color. */
   EXACT: 3,
+  /** Single hypotheses: a cell color or rule that leads to a contradiction is eliminated. */
+  PROBE: 4,
 } as const;
-export const MAX_LEVEL = LEVEL.EXACT;
+export const MAX_LEVEL = LEVEL.PROBE;
+/** Level used inside search: probing at every node costs more than the branches it saves. */
+export const SEARCH_LEVEL = LEVEL.EXACT;
 
 const EDGE_A = Int8Array.from(EDGES, (e) => e.a);
 const EDGE_B = Int8Array.from(EDGES, (e) => e.b);
@@ -48,11 +53,56 @@ function unpackDomains(s: SolverState, offset: number, packed: number): void {
   for (let c = 0; c < COLOR_COUNT; c++) s[offset + c] = (packed >>> (5 * c)) & ALL_COLORS_MASK;
 }
 
+const hypothesis = new Uint8Array(STATE_SIZE);
+
 /**
  * Removes candidates that cannot appear in any valid solution, up to the given level, until a
  * fixpoint. Mutates `s`. Returns false if a contradiction was found.
  */
 export function propagate(s: SolverState, clues: ClueSet, level: number): boolean {
+  return level >= LEVEL.PROBE
+    ? propagateWithProbing(s, clues)
+    : propagateDeductions(s, clues, level);
+}
+
+function isInvalidSolvedState(s: SolverState): boolean {
+  for (let x = 0; x < CELL_COUNT; x++) if (!isSingleton(s[x]!)) return false;
+  return deriveRuleset(boardOfSolvedState(s)) === null;
+}
+
+/** Tries every remaining candidate of every cell and rule; candidates that fail are removed. */
+function propagateWithProbing(s: SolverState, clues: ClueSet): boolean {
+  if (!propagateDeductions(s, clues, LEVEL.EXACT)) return false;
+  for (;;) {
+    let changed = false;
+    for (let slot = 0; slot < STATE_SIZE; slot++) {
+      const m = s[slot]!;
+      if (isSingleton(m)) continue;
+      let kept = m;
+      for (let c = 0; c < COLOR_COUNT; c++) {
+        const bit = 1 << c;
+        if (!(m & bit)) continue;
+        hypothesis.set(s);
+        hypothesis[slot] = bit;
+        if (
+          !propagateDeductions(hypothesis, clues, LEVEL.EXACT) ||
+          isInvalidSolvedState(hypothesis)
+        ) {
+          kept &= ~bit;
+        }
+      }
+      if (kept !== m) {
+        if (kept === 0) return false;
+        s[slot] = kept;
+        if (!propagateDeductions(s, clues, LEVEL.EXACT)) return false;
+        changed = true;
+      }
+    }
+    if (!changed) return true;
+  }
+}
+
+function propagateDeductions(s: SolverState, clues: ClueSet, level: number): boolean {
   const relations = clues.relations;
   let lastMust = -1;
   let lastNever = -1;

@@ -5,7 +5,7 @@ import type { Rng } from '../rng';
 import type { Ruleset } from '../rules';
 import { deriveRuleset } from '../validator';
 import { POPCOUNT } from './bits';
-import { MAX_LEVEL, propagate } from './propagate';
+import { propagate, SEARCH_LEVEL } from './propagate';
 import {
   boardOfSolvedState,
   createState,
@@ -25,7 +25,7 @@ export interface SearchOptions {
   collect?: boolean;
   /** Randomizes the order in which colors are tried. */
   rng?: Rng;
-  /** Propagation level used at every node (default: strongest). */
+  /** Propagation level used at every node (default: SEARCH_LEVEL). */
   level?: number;
   /** Pin the hidden rules. */
   ruleset?: Ruleset;
@@ -54,7 +54,7 @@ function rulesetFitsDomains(s: SolverState, rs: Ruleset): boolean {
 export function countSolutions(clues: ClueSet, options: SearchOptions = {}): SearchResult {
   const limit = options.limit ?? 2;
   const maxNodes = options.maxNodes ?? Number.POSITIVE_INFINITY;
-  const level = options.level ?? MAX_LEVEL;
+  const level = options.level ?? SEARCH_LEVEL;
   const { rng, collect, onSolution } = options;
   const stack = new Uint8Array(STATE_SIZE * (CELL_COUNT + 1));
   stack.set(createState(clues, options.ruleset));
