@@ -5,6 +5,7 @@ import {
   canHint,
   createGame,
   deserializeGame,
+  findMistakes,
   moveTile,
   placeFromTray,
   restoreCheckpoint,
@@ -238,5 +239,20 @@ describe('serialization', () => {
     // A clue tile of the puzzle must stay locked in place.
     expect(deserializeGame(puzzle, { ...good, locked: good.locked.map(() => 0) })).toBeNull();
     expect(deserializeGame(puzzle, { ...good, status: 'bogus' })).toBeNull();
+  });
+});
+
+describe('findMistakes', () => {
+  it('reports no mistakes on a fresh game or with only correct tiles', () => {
+    expect(findMistakes(createGame(puzzle))).toEqual([]);
+    expect(findMistakes(fillCorrectly(createGame(puzzle), [0]))).toEqual([]);
+  });
+
+  it('lists placed tiles that differ from the solution, ignoring empty cells', () => {
+    let s = createGame(puzzle);
+    const wrong = (solution[0]! + 1) % 5;
+    s = placeFromTray(s, wrong, 0);
+    s = placeFromTray(s, solution[2]!, 2);
+    expect(findMistakes(s)).toEqual([0]);
   });
 });

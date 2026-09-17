@@ -7,6 +7,7 @@ import {
   canHint,
   createGame,
   deserializeGame,
+  findMistakes,
   restoreCheckpoint,
   returnToTray,
   revealHint,
@@ -19,6 +20,7 @@ import {
   type GameState,
 } from '../game/state';
 import type { PuzzleSource } from '../worker/client';
+import { canUndo, commit, startHistory, undo, type History } from '../game/history';
 import { byId } from './dom';
 import { applyDrop, attachDragController, type DragControllerOptions } from './dragDrop';
 import { mountLayout } from './layout';
@@ -57,7 +59,9 @@ function describeProgress(difficulty: DifficultyLevel, progress?: GenerateProgre
 }
 
 export class App {
-  private state: GameState | null = null;
+  private history: History | null = null;
+  private mistakes: ReadonlySet<number> = new Set();
+  private statusIsCheck = false;
   private puzzle: Puzzle | null = null;
   private puzzleCode = '';
   private difficulty: DifficultyLevel = DEFAULT_DIFFICULTY;
@@ -79,6 +83,8 @@ export class App {
       'reset-btn',
       'clue-btn',
       'reveal-btn',
+      'undo-btn',
+      'check-btn',
       'checkpoint-btn',
       'restore-btn',
       'status',
@@ -99,6 +105,7 @@ export class App {
       },
     });
     root.addEventListener('click', this.onNoteClick);
+    root.ownerDocument.addEventListener('keydown', this.onKeyDown);
 
     this.on('difficulty-select', 'change', () => {
       const value = (this.el['difficulty-select'] as HTMLSelectElement).value;
@@ -108,6 +115,8 @@ export class App {
     this.on('reset-btn', 'click', () => this.puzzle && this.setState(createGame(this.puzzle)));
     this.on('clue-btn', 'click', () => this.update((s) => revealHint(s, options.rng)));
     this.on('reveal-btn', 'click', () => this.update(revealSolution));
+    this.on('undo-btn', 'click', () => this.undo());
+    this.on('check-btn', 'click', () => this.check());
     this.on('checkpoint-btn', 'click', () => this.update(saveCheckpoint));
     this.on('restore-btn', 'click', () => this.update(restoreCheckpoint));
     this.on('share-btn', 'click', () => void this.share());
@@ -156,6 +165,7 @@ export class App {
     this.detachDrag();
     this.notesMenu.close();
     this.options.root.removeEventListener('click', this.onNoteClick);
+    this.options.root.ownerDocument.removeEventListener('keydown', this.onKeyDown);
   }
 
   private load(puzzle: Puzzle): void {
@@ -167,8 +177,10 @@ export class App {
       : '';
     this.el['win-modal']!.hidden = true;
     this.puzzleCode = encodePuzzle(puzzle);
-    this.state = null;
-    this.setState(this.savedGame(puzzle) ?? createGame(puzzle));
+    this.history = startHistory(this.savedGame(puzzle) ?? createGame(puzzle));
+    this.mistakes = new Set();
+    this.render();
+    this.save(this.history.present);
     const url = new URL(this.options.url);
     url.search = '';
     url.searchParams.set('p', this.puzzleCode);
@@ -177,19 +189,61 @@ export class App {
     this.options.onUrlChange?.(url);
   }
 
+  private get state(): GameState | null {
+    return this.history?.present ?? null;
+  }
+
   private update(change: (state: GameState) => GameState): void {
     if (this.state) this.setState(change(this.state));
   }
 
   private setState(next: GameState): void {
-    const previous = this.state;
-    if (next === previous) return;
-    this.state = next;
-    if (previous?.status === 'playing' && next.status === 'won')
+    if (!this.history || next === this.history.present) return;
+    const previous = this.history.present;
+    this.history = commit(this.history, next);
+    if (previous.status === 'playing' && next.status === 'won') {
       this.el['win-modal']!.hidden = false;
-    this.render();
-    this.save(next);
+    }
+    this.afterChange();
   }
+
+  private undo(): void {
+    if (!this.history || this.history.present.status !== 'playing' || !canUndo(this.history)) {
+      return;
+    }
+    this.history = undo(this.history);
+    this.afterChange();
+  }
+
+  private afterChange(): void {
+    this.mistakes = new Set();
+    if (this.statusIsCheck) this.setStatus('');
+    this.render();
+    this.save(this.history!.present);
+  }
+
+  private check(): void {
+    const state = this.state;
+    if (!state) return;
+    const mistakes = findMistakes(state);
+    this.mistakes = new Set(mistakes);
+    this.render();
+    this.setStatus(
+      mistakes.length === 0
+        ? 'No mistakes so far.'
+        : `${mistakes.length} ${mistakes.length === 1 ? 'tile is' : 'tiles are'} wrong.`,
+    );
+    this.statusIsCheck = true;
+  }
+
+  private readonly onKeyDown = (event: KeyboardEvent) => {
+    if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === 'z') {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest?.('input, textarea, select')) return;
+      event.preventDefault();
+      this.undo();
+    }
+  };
 
   private savedGame(puzzle: Puzzle): GameState | null {
     try {
@@ -216,15 +270,28 @@ export class App {
   private render(): void {
     const state = this.state;
     if (!state) return;
-    renderBoard(this.el['game-board']!, this.el['relationship-clues-container']!, state);
+    renderBoard(
+      this.el['game-board']!,
+      this.el['relationship-clues-container']!,
+      state,
+      this.mistakes,
+    );
     renderSpawners(this.el['spawner-grid']!, this.el['spawner-clues-container']!, state);
     renderSpawnerNotes(this.el['spawner-notes-grid']!, state);
     const playing = state.status === 'playing';
-    for (const id of ['reset-btn', 'clue-btn', 'reveal-btn', 'checkpoint-btn']) {
+    for (const id of [
+      'reset-btn',
+      'clue-btn',
+      'reveal-btn',
+      'undo-btn',
+      'check-btn',
+      'checkpoint-btn',
+    ]) {
       this.el[id]!.hidden = !playing;
     }
     this.el['restore-btn']!.hidden = !playing || !state.checkpoint;
     (this.el['clue-btn'] as HTMLButtonElement).disabled = !canHint(state);
+    (this.el['undo-btn'] as HTMLButtonElement).disabled = !canUndo(this.history!);
   }
 
   private readonly onNoteClick = (event: MouseEvent) => {
@@ -258,6 +325,7 @@ export class App {
   }
 
   private setStatus(text: string): void {
+    this.statusIsCheck = false;
     this.el['status']!.textContent = text;
   }
 

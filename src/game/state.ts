@@ -160,6 +160,16 @@ function wrongCells(state: GameState): number[] {
   return cells;
 }
 
+/** Placed, unlocked tiles that do not match the solution. */
+export function findMistakes(state: GameState): number[] {
+  const mistakes: number[] = [];
+  for (let cell = 0; cell < CELL_COUNT; cell++) {
+    const color = state.cells[cell]!;
+    if (color >= 0 && !state.locked[cell] && color !== state.solution[cell]) mistakes.push(cell);
+  }
+  return mistakes;
+}
+
 export function canHint(state: GameState): boolean {
   return isPlaying(state) && wrongCells(state).length > 0;
 }

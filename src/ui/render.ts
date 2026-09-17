@@ -22,7 +22,12 @@ function relationBadge(symbol: string, placement: Record<string, string>, classN
   ]);
 }
 
-export function renderBoard(board: HTMLElement, overlay: HTMLElement, state: GameState): void {
+export function renderBoard(
+  board: HTMLElement,
+  overlay: HTMLElement,
+  state: GameState,
+  mistakes: ReadonlySet<number> = new Set(),
+): void {
   const cells: HTMLElement[] = [];
   for (let cell = 0; cell < CELL_COUNT; cell++) {
     const color = state.cells[cell]!;
@@ -45,6 +50,7 @@ export function renderBoard(board: HTMLElement, overlay: HTMLElement, state: Gam
       const dots = noteDots(state.gridNotes[cell]!);
       if (dots) node.appendChild(dots);
     }
+    if (mistakes.has(cell)) node.classList.add('mistake');
     if (saved >= 0) {
       node.classList.add('checkpointed');
       node.style.boxShadow = `inset 0 0 0 3px var(--shadow-${saved})`;

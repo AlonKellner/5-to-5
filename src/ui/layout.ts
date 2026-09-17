@@ -31,6 +31,8 @@ export function mountLayout(root: HTMLElement): void {
           </div>
 
           <div id="bottom-controls" class="toolbar">
+            <button id="undo-btn" class="btn btn-gray" title="Undo (Ctrl+Z / ⌘Z)" disabled>Undo</button>
+            <button id="check-btn" class="btn btn-teal">Check</button>
             <button id="checkpoint-btn" class="btn btn-purple">Checkpoint</button>
             <button id="restore-btn" class="btn btn-pink" hidden>Restore</button>
           </div>

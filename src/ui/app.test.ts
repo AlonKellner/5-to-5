@@ -317,4 +317,99 @@ describe('App', () => {
       expect($$('#game-board > *')).toHaveLength(25);
     });
   });
+
+  describe('undo', () => {
+    const undoButton = () => $<HTMLButtonElement>('#undo-btn');
+
+    it('is disabled until something changes', () => {
+      expect(undoButton().disabled).toBe(true);
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      expect(undoButton().disabled).toBe(false);
+    });
+
+    it('reverts moves one step at a time', () => {
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      drag($('#spawner-grid [data-drag="tray"][data-color="1"]'), cell(2));
+      undoButton().click();
+      expect(cell(2).classList.contains('drop-zone')).toBe(true);
+      expect(cell(0).classList.contains('color-0')).toBe(true);
+      undoButton().click();
+      expect(cell(0).classList.contains('drop-zone')).toBe(true);
+      expect(undoButton().disabled).toBe(true);
+    });
+
+    it('reverts notes, hints and resets', () => {
+      cell(0).click();
+      ($$('.note-option')[2] as HTMLElement).click();
+      undoButton().click();
+      expect(cell(0).querySelectorAll('.note-dot')).toHaveLength(0);
+
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      $('#reset-btn').click();
+      undoButton().click();
+      expect(cell(0).classList.contains('color-0')).toBe(true);
+
+      const locked = $$('#game-board > .clue-piece').length;
+      $('#clue-btn').click();
+      undoButton().click();
+      expect($$('#game-board > .clue-piece')).toHaveLength(locked);
+    });
+
+    it('responds to Ctrl+Z and Cmd+Z', () => {
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', metaKey: true }));
+      expect(cell(0).classList.contains('drop-zone')).toBe(true);
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
+      expect(cell(0).classList.contains('drop-zone')).toBe(true);
+    });
+
+    it('is not available once the puzzle is solved', () => {
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      $('#reveal-btn').click();
+      expect(undoButton().hidden).toBe(true);
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', metaKey: true }));
+      expect($$('#game-board > .clue-piece')).toHaveLength(25);
+    });
+
+    it('starts a fresh history for a new puzzle', async () => {
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      source.next = { ...legacyPuzzle(), solution: permuteColors(solution, [1, 2, 3, 4, 0]) };
+      $('#new-btn').click();
+      await vi.waitFor(() => expect(source.calls).toHaveLength(2));
+      await vi.waitFor(() => expect(undoButton().disabled).toBe(true));
+    });
+  });
+
+  describe('check', () => {
+    it('reports no mistakes when every placed tile is right', () => {
+      drag($(`#spawner-grid [data-drag="tray"][data-color="${solution[0]}"]`), cell(0));
+      $('#check-btn').click();
+      expect($('#status').textContent).toMatch(/no mistakes/i);
+      expect($$('#game-board > .mistake')).toHaveLength(0);
+    });
+
+    it('marks wrong tiles and counts them', () => {
+      const wrong = (solution[0]! + 1) % 5;
+      drag($(`#spawner-grid [data-drag="tray"][data-color="${wrong}"]`), cell(0));
+      drag($(`#spawner-grid [data-drag="tray"][data-color="${solution[2]}"]`), cell(2));
+      $('#check-btn').click();
+      expect($('#status').textContent).toMatch(/1 tile is wrong/i);
+      expect($$('#game-board > .mistake').map((c) => c.dataset['cell'])).toEqual(['0']);
+    });
+
+    it('clears the marks and message after the next change', () => {
+      const wrong = (solution[0]! + 1) % 5;
+      drag($(`#spawner-grid [data-drag="tray"][data-color="${wrong}"]`), cell(0));
+      $('#check-btn').click();
+      drag(cell(0), $(`#spawner-grid .spawner[data-color="${wrong}"]`));
+      expect($$('#game-board > .mistake')).toHaveLength(0);
+      expect($('#status').textContent).toBe('');
+    });
+
+    it('is hidden once the puzzle is solved', () => {
+      $('#reveal-btn').click();
+      expect($('#check-btn').hidden).toBe(true);
+    });
+  });
 });

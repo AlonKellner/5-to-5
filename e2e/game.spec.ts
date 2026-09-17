@@ -126,3 +126,22 @@ test('reopens a shared puzzle link exactly', async ({ page }) => {
     .evaluateAll((els) => els.map((e) => `${e.getAttribute('data-cell')}:${e.className}`));
   expect(reopened).toEqual(clues);
 });
+
+test('undoes moves and checks for mistakes', async ({ page }) => {
+  await page.goto('./?d=easy');
+  await waitForPuzzle(page);
+  const empty = page.locator('#game-board > .drop-zone').last();
+  const index = Number(await empty.getAttribute('data-cell'));
+  const color = Number(
+    await page.locator('#spawner-grid [data-drag="tray"]').first().getAttribute('data-color'),
+  );
+
+  await dragTo(page, trayTile(page, color), cell(page, index));
+  await page.locator('#check-btn').click();
+  await expect(page.locator('#status')).toHaveText(/no mistakes so far|1 tile is wrong/i);
+  await page.screenshot({ path: `test-results/screenshots/${test.info().project.name}-check.png` });
+
+  await page.locator('#undo-btn').click();
+  await expect(cell(page, index)).toHaveClass(/drop-zone/);
+  await expect(page.locator('#undo-btn')).toBeDisabled();
+});
