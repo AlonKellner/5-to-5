@@ -29,6 +29,8 @@ export interface SearchOptions {
   level?: number;
   /** Pin the hidden rules. */
   ruleset?: Ruleset;
+  /** Start from this (already narrowed) state instead of the clues alone. */
+  startState?: SolverState;
   /** Called for every solution; return false to stop the search. */
   onSolution?: (board: Board, ruleset: Ruleset) => boolean | void;
 }
@@ -57,7 +59,7 @@ export function countSolutions(clues: ClueSet, options: SearchOptions = {}): Sea
   const level = options.level ?? SEARCH_LEVEL;
   const { rng, collect, onSolution } = options;
   const stack = new Uint8Array(STATE_SIZE * (CELL_COUNT + 1));
-  stack.set(createState(clues, options.ruleset));
+  stack.set(options.startState ?? createState(clues, options.ruleset));
   const result: SearchResult = {
     status: 'complete',
     count: 0,

@@ -26,7 +26,9 @@
     "exp:dig": "tsx scripts/experiments/dig.ts",
     "exp:calibrate": "tsx scripts/experiments/difficulty-calibration.ts",
     "test:e2e": "playwright test",
-    "bench:browser": "playwright test --config playwright.bench.config.ts"
+    "bench:browser": "playwright test --config playwright.bench.config.ts",
+    "exp:levels": "tsx scripts/experiments/levels.ts",
+    "exp:grading": "tsx scripts/experiments/grading.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

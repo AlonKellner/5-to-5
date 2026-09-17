@@ -1,6 +1,6 @@
 /**
  * Generate puzzles from the terminal.
- * Usage: npm run puzzle -- [--seed s] [--difficulty easy|medium|hard|expert] [--count n]
+ * Usage: npm run puzzle -- [--seed s] [--difficulty 1-7 or a level name] [--count n]
  *                          [--solution] [--json]
  */
 import { performance } from 'node:perf_hooks';
@@ -10,7 +10,7 @@ import { countClueKinds } from '../src/core/clues';
 import { encodePuzzle } from '../src/core/codec';
 import { formatPuzzleAscii, formatRuleset } from '../src/core/format';
 import { generatePuzzle } from '../src/core/generator/generate';
-import { DIFFICULTY_LEVELS, type DifficultyLevel } from '../src/core/puzzle';
+import { DIFFICULTY_LEVELS, DIFFICULTY_NAMES, parseDifficulty } from '../src/core/puzzle';
 import { deriveRuleset } from '../src/core/validator';
 
 export function runCli(argv: string[]): string {
@@ -22,9 +22,10 @@ export function runCli(argv: string[]): string {
     if (next === undefined || next.startsWith('--')) args.set(a.slice(2), 'true');
     else args.set(a.slice(2), argv[++i]!);
   }
-  const difficulty = (args.get('difficulty') ?? 'medium') as DifficultyLevel;
-  if (!DIFFICULTY_LEVELS.includes(difficulty)) {
-    throw new Error(`--difficulty must be one of ${DIFFICULTY_LEVELS.join(', ')}`);
+  const difficulty = parseDifficulty(args.get('difficulty') ?? '3');
+  if (!difficulty) {
+    const names = DIFFICULTY_LEVELS.map((l) => `${l} (${DIFFICULTY_NAMES[l]})`).join(', ');
+    throw new Error(`--difficulty must be one of ${names}`);
   }
   const count = Number(args.get('count') ?? 1);
   const baseSeed = args.get('seed') ?? String(Date.now());
@@ -53,7 +54,7 @@ export function runCli(argv: string[]): string {
       continue;
     }
     out.push(
-      `seed ${seed} · ${puzzle.rating!.level} (score ${puzzle.rating!.score}) · ` +
+      `seed ${seed} · level ${puzzle.rating!.level} ${DIFFICULTY_NAMES[difficulty]} (score ${puzzle.rating!.score}) · ` +
         `${kinds.tiles} tiles + ${kinds.relations} relations · ${ms.toFixed(0)} ms · code ${code}`,
       '',
       formatPuzzleAscii(puzzle),

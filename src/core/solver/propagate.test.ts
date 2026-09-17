@@ -5,7 +5,7 @@ import { digClues } from '../generator/dig';
 import { Rng } from '../rng';
 import { solveByPropagation } from './search';
 import { createState, MUST, NEVER } from './state';
-import { LEVEL, propagate } from './propagate';
+import { LEVEL, propagate, propagateRound } from './propagate';
 
 const R = 0b00001;
 const B = 0b00010;
@@ -197,5 +197,31 @@ describe('level 4: probing', () => {
       if (!solveByPropagation(clues, LEVEL.EXACT).solved) needsProbing++;
     }
     expect(needsProbing).toBeGreaterThan(0);
+  });
+});
+
+describe('propagateRound', () => {
+  it('does one round at a time and repeated rounds reach the fixpoint', () => {
+    const solution = legacySolution();
+    const { mask } = digClues(solution, new Rng('rounds'), {
+      criterion: { kind: 'propagation', level: LEVEL.EXACT },
+    });
+    const clues = clueSetFromMask(solution, mask);
+    const fixpoint = createState(clues);
+    expect(propagate(fixpoint, clues, LEVEL.EXACT)).toBe(true);
+
+    const stepped = createState(clues);
+    let rounds = 0;
+    for (;;) {
+      const before = stepped.slice();
+      expect(propagateRound(stepped, clues, LEVEL.EXACT)).toBe(true);
+      for (let i = 0; i < stepped.length; i++) {
+        expect(stepped[i]! & fixpoint[i]!).toBe(fixpoint[i]);
+      }
+      if (stepped.every((v, i) => v === before[i])) break;
+      rounds++;
+    }
+    expect(rounds).toBeGreaterThan(1);
+    expect([...stepped]).toEqual([...fixpoint]);
   });
 });

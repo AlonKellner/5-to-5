@@ -10,9 +10,9 @@ import { App, STORAGE_KEY } from './app';
 
 const solution = legacyPuzzle().solution;
 const rating = {
-  level: 'hard' as const,
+  level: 5 as const,
   score: 480,
-  stats: { propagationLevel: 4, nodes: 7, guessDepth: 3, tileClues: 4, relationClues: 12 },
+  stats: { steps: [5, 2, 3, 0, 4], guessNodes: 0, effort: 60, tileClues: 4, relationClues: 12 },
 };
 
 class FakeSource implements PuzzleSource {
@@ -118,11 +118,11 @@ describe('App', () => {
     });
 
     it('shows the difficulty and loads the puzzle into the URL', () => {
-      expect($('#puzzle-info').textContent).toContain('Medium');
-      expect(source.calls).toEqual([{ seed: 'fresh-seed', difficulty: 'medium' }]);
+      expect($('#puzzle-info').textContent).toContain('Medium (3/7)');
+      expect(source.calls).toEqual([{ seed: 'fresh-seed', difficulty: 3 }]);
       const url = urls.at(-1)!;
       expect(url.searchParams.get('p')).toBe(encodePuzzle(legacyPuzzle()));
-      expect(url.searchParams.get('d')).toBe('medium');
+      expect(url.searchParams.get('d')).toBe('3');
     });
   });
 
@@ -241,12 +241,12 @@ describe('App', () => {
 
     it('generates a new puzzle with the selected difficulty', async () => {
       const select = $<HTMLSelectElement>('#difficulty-select');
-      select.value = 'expert';
+      select.value = '6';
       select.dispatchEvent(new Event('change'));
       $('#new-btn').click();
       await vi.waitFor(() => expect(source.calls).toHaveLength(2));
-      expect(source.calls[1]).toEqual({ seed: 'fresh-seed', difficulty: 'expert' });
-      await vi.waitFor(() => expect($('#puzzle-info').textContent).toContain('Expert'));
+      expect(source.calls[1]).toEqual({ seed: 'fresh-seed', difficulty: 6 });
+      await vi.waitFor(() => expect($('#puzzle-info').textContent).toContain('Expert (6/7)'));
     });
 
     it('copies a share link', async () => {
@@ -260,9 +260,9 @@ describe('App', () => {
       app.destroy();
       document.body.innerHTML = '<div id="app"></div>';
       source = new FakeSource();
-      await startApp(`https://example.com/?p=${encodePuzzle(legacyPuzzle())}&d=hard`);
+      await startApp(`https://example.com/?p=${encodePuzzle(legacyPuzzle())}&d=5`);
       expect(source.calls).toHaveLength(0);
-      expect($('#puzzle-info').textContent).toContain('Hard');
+      expect($('#puzzle-info').textContent).toMatch(/\(\d\/7\) · score \d+/);
       expect(cell(1).classList.contains('clue-piece')).toBe(true);
     });
 
@@ -270,9 +270,17 @@ describe('App', () => {
       app.destroy();
       document.body.innerHTML = '<div id="app"></div>';
       source = new FakeSource();
-      await startApp('https://example.com/?seed=abc&d=easy');
-      expect(source.calls).toEqual([{ seed: 'abc', difficulty: 'easy' }]);
-      expect($<HTMLSelectElement>('#difficulty-select').value).toBe('easy');
+      await startApp('https://example.com/?seed=abc&d=2');
+      expect(source.calls).toEqual([{ seed: 'abc', difficulty: 2 }]);
+      expect($<HTMLSelectElement>('#difficulty-select').value).toBe('2');
+    });
+
+    it('still understands level names from older links', async () => {
+      app.destroy();
+      document.body.innerHTML = '<div id="app"></div>';
+      source = new FakeSource();
+      await startApp('https://example.com/?seed=abc&d=expert');
+      expect(source.calls).toEqual([{ seed: 'abc', difficulty: 6 }]);
     });
 
     it('falls back to generating when the code is invalid', async () => {

@@ -3,6 +3,7 @@ import { clueSetFromMask, fullMask, SLOT_COUNT, type ClueMask } from '../clues';
 import { CELL_COUNT } from '../constants';
 import type { Rng } from '../rng';
 import { countSolutions, solveByPropagation } from '../solver/search';
+import { gradeClues } from './grade';
 
 export type DigOrder = 'random' | 'tiles-first' | 'relations-first';
 
@@ -10,7 +11,12 @@ export type DigCriterion =
   /** Keep removing clues while the puzzle has exactly one solution. */
   | { kind: 'unique'; maxNodes?: number }
   /** Keep removing clues while propagation at `level` alone still solves the puzzle. */
-  | { kind: 'propagation'; level: number };
+  | { kind: 'propagation'; level: number }
+  /**
+   * Keep removing clues while the puzzle stays unique and its score stays at most `maxScore`.
+   * The score is not strictly monotone in the clues, so a kept clue may not be strictly necessary.
+   */
+  | { kind: 'score'; maxScore: number; maxNodes?: number };
 
 export interface DigOptions {
   criterion?: DigCriterion;
@@ -39,8 +45,8 @@ export function shuffledSlots(rng: Rng, order: DigOrder): number[] {
 
 /**
  * Removes clues one at a time in a random order, keeping a removal only if the criterion still
- * holds. A single pass leaves a set where every remaining clue is necessary: once a removal fails,
- * later removals only weaken the puzzle, so it would fail again.
+ * holds. For the uniqueness and propagation criteria a single pass leaves only necessary clues:
+ * once a removal fails, later removals only weaken the puzzle, so it would fail again.
  */
 export function digClues(solution: Board, rng: Rng, options: DigOptions = {}): DigResult {
   const criterion = options.criterion ?? { kind: 'unique' };
@@ -54,6 +60,13 @@ export function digClues(solution: Board, rng: Rng, options: DigOptions = {}): D
     const clues = clueSetFromMask(solution, mask);
     if (criterion.kind === 'propagation') {
       if (!solveByPropagation(clues, criterion.level).solved) mask[slot] = 1;
+      continue;
+    }
+    if (criterion.kind === 'score') {
+      const grade = gradeClues(clues, { maxNodes: criterion.maxNodes });
+      result.nodes += grade.stats.guessNodes;
+      if (grade.timedOut) result.timeouts++;
+      if (!grade.unique || grade.timedOut || grade.score > criterion.maxScore) mask[slot] = 1;
       continue;
     }
 

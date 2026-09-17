@@ -109,6 +109,15 @@ describe('countSolutions edge cases', () => {
     for (const s of result.solutions) expect(deriveRuleset(s)).toEqual(HTML_RULESET);
   });
 
+  it('can start from an already narrowed state', () => {
+    const clues = clueSetFromMask(legacyBoard, legacyPuzzleMask());
+    const startState = solveByPropagation(clues, 3).state;
+    const fromStart = countSolutions(clues, { limit: 2, startState, collect: true });
+    expect(fromStart.count).toBe(1);
+    expect(formatBoard(fromStart.solutions[0]!)).toBe(formatBoard(legacyBoard));
+    expect(fromStart.nodes).toBeLessThanOrEqual(countSolutions(clues, { limit: 2 }).nodes);
+  });
+
   it('counts the same with a randomized value order', () => {
     const clues = clueSetFromMask(legacyBoard, legacyPuzzleMask());
     for (const seed of ['a', 'b', 'c']) {

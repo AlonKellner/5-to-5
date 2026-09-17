@@ -28,16 +28,16 @@ async function waitForPuzzle(page: Page) {
 }
 
 test('generates a puzzle in a worker and records it in the URL', async ({ page }) => {
-  await page.goto('./?d=easy');
+  await page.goto('./?d=1');
   await waitForPuzzle(page);
   await expect(page).toHaveURL(/[?&]p=1[\w-]+/);
-  await expect(page).toHaveURL(/[?&]d=easy/);
-  await expect(page.locator('#puzzle-info')).toContainText('Easy');
+  await expect(page).toHaveURL(/[?&]d=1/);
+  await expect(page.locator('#puzzle-info')).toContainText('Beginner (1/7)');
   await page.screenshot({ path: `test-results/screenshots/${test.info().project.name}-start.png` });
 });
 
 test('drags tiles between the tray and the board', async ({ page }) => {
-  await page.goto('./?d=easy');
+  await page.goto('./?d=1');
   await waitForPuzzle(page);
   const empty = page.locator('#game-board > .drop-zone').last();
   const index = Number(await empty.getAttribute('data-cell'));
@@ -60,7 +60,7 @@ test('drags tiles between the tray and the board', async ({ page }) => {
 });
 
 test('draws relation clues centered between their two cells', async ({ page }) => {
-  await page.goto('./?d=easy');
+  await page.goto('./?d=1');
   await waitForPuzzle(page);
   const badges = page.locator('#relationship-clues-container .relation-slot');
   const count = await badges.count();
@@ -81,7 +81,7 @@ test('draws relation clues centered between their two cells', async ({ page }) =
 });
 
 test('takes notes, reveals a clue and solves', async ({ page }) => {
-  await page.goto('./?d=medium');
+  await page.goto('./?d=3');
   await waitForPuzzle(page);
   const empty = page.locator('#game-board > .drop-zone').first();
   await empty.click();
@@ -103,17 +103,17 @@ test('takes notes, reveals a clue and solves', async ({ page }) => {
 });
 
 test('generates a new puzzle at the chosen difficulty', async ({ page }) => {
-  await page.goto('./?d=easy');
+  await page.goto('./?d=1');
   await waitForPuzzle(page);
   const firstUrl = page.url();
-  await page.locator('#difficulty-select').selectOption('hard');
+  await page.locator('#difficulty-select').selectOption('5');
   await page.locator('#new-btn').click();
-  await expect(page.locator('#puzzle-info')).toContainText('Hard', { timeout: 30_000 });
+  await expect(page.locator('#puzzle-info')).toContainText('Hard (5/7)', { timeout: 30_000 });
   expect(page.url()).not.toBe(firstUrl);
 });
 
 test('reopens a shared puzzle link exactly', async ({ page }) => {
-  await page.goto('./?d=easy');
+  await page.goto('./?d=1');
   await waitForPuzzle(page);
   const url = page.url();
   const clues = await page
@@ -128,7 +128,7 @@ test('reopens a shared puzzle link exactly', async ({ page }) => {
 });
 
 test('undoes moves and checks for mistakes', async ({ page }) => {
-  await page.goto('./?d=easy');
+  await page.goto('./?d=1');
   await waitForPuzzle(page);
   const empty = page.locator('#game-board > .drop-zone').last();
   const index = Number(await empty.getAttribute('data-cell'));

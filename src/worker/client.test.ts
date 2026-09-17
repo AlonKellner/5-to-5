@@ -25,9 +25,9 @@ class FakeWorker implements WorkerLike {
 }
 
 const rating = {
-  level: 'hard' as const,
-  score: 400,
-  stats: { propagationLevel: 4, nodes: 7, guessDepth: 3, tileClues: 4, relationClues: 12 },
+  level: 5 as const,
+  score: 480,
+  stats: { steps: [5, 2, 3, 0, 4], guessNodes: 0, effort: 60, tileClues: 4, relationClues: 12 },
 };
 
 describe('GeneratorClient', () => {
@@ -38,9 +38,9 @@ describe('GeneratorClient', () => {
       workers.push(w);
       return w;
     });
-    const promise = client.generate('abc', 'hard');
+    const promise = client.generate('abc', 5);
     const worker = workers[0]!;
-    expect(worker.requests).toEqual([{ id: 1, seed: 'abc', difficulty: 'hard' }]);
+    expect(worker.requests).toEqual([{ id: 1, seed: 'abc', difficulty: 5 }]);
     worker.reply({
       id: 1,
       type: 'result',
@@ -58,7 +58,7 @@ describe('GeneratorClient', () => {
     const worker = new FakeWorker();
     const client = new GeneratorClient(() => worker);
     const onProgress = vi.fn();
-    const promise = client.generate('abc', 'easy', onProgress);
+    const promise = client.generate('abc', 2, onProgress);
     worker.reply({ id: 1, type: 'progress', progress: { phase: 'board', attempt: 1, trials: 5 } });
     worker.reply({
       id: 1,
@@ -74,7 +74,7 @@ describe('GeneratorClient', () => {
   it('rejects on worker errors', async () => {
     const worker = new FakeWorker();
     const client = new GeneratorClient(() => worker);
-    const promise = client.generate('abc', 'easy');
+    const promise = client.generate('abc', 2);
     worker.reply({ id: 1, type: 'error', message: 'boom' });
     await expect(promise).rejects.toThrow('boom');
   });
@@ -86,11 +86,11 @@ describe('GeneratorClient', () => {
       workers.push(w);
       return w;
     });
-    const first = client.generate('one', 'expert');
-    const second = client.generate('two', 'easy');
+    const first = client.generate('one', 6);
+    const second = client.generate('two', 2);
     await expect(first).rejects.toThrow(/cancel/i);
     expect(workers[0]!.terminated).toBe(true);
-    expect(workers[1]!.requests).toEqual([{ id: 2, seed: 'two', difficulty: 'easy' }]);
+    expect(workers[1]!.requests).toEqual([{ id: 2, seed: 'two', difficulty: 2 }]);
     workers[1]!.reply({
       id: 2,
       type: 'result',
@@ -104,7 +104,7 @@ describe('GeneratorClient', () => {
   it('ignores messages from stale requests', async () => {
     const worker = new FakeWorker();
     const client = new GeneratorClient(() => worker);
-    const promise = client.generate('abc', 'easy');
+    const promise = client.generate('abc', 2);
     worker.reply({ id: 99, type: 'error', message: 'stale' });
     worker.reply({
       id: 1,

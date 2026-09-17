@@ -1,9 +1,9 @@
-import { DIFFICULTY_LEVELS } from '../core/puzzle';
+import { DIFFICULTY_LEVELS, DIFFICULTY_NAMES } from '../core/puzzle';
 
 /** Static page skeleton; everything inside the ids is rendered from state. */
 export function mountLayout(root: HTMLElement): void {
   const options = DIFFICULTY_LEVELS.map(
-    (level) => `<option value="${level}">${level[0]!.toUpperCase()}${level.slice(1)}</option>`,
+    (level) => `<option value="${level}">${level} · ${DIFFICULTY_NAMES[level]}</option>`,
   ).join('');
   root.innerHTML = `
     <main class="container">

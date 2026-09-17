@@ -39,18 +39,18 @@ npm install
 npx playwright install chromium webkit   # only for end-to-end tests
 ```
 
-| command                                          | what it does                                                     |
-| ------------------------------------------------ | ---------------------------------------------------------------- |
-| `npm run dev`                                    | dev server with hot reload at http://localhost:5173/5-to-5/      |
-| `npm test` / `npm run test:watch`                | unit and DOM tests (Vitest)                                      |
-| `npm run test:e2e`                               | browser tests (Playwright, desktop Chromium + iPhone WebKit)     |
-| `npm run coverage`                               | unit tests with a coverage report in `coverage/`                 |
-| `npm run check`                                  | lint, typecheck, tests and production build                      |
-| `npm run build` / `npm run preview`              | production build in `dist/` and a local preview                  |
-| `npm run puzzle -- --difficulty hard --solution` | generate puzzles in the terminal (`--seed`, `--count`, `--json`) |
-| `npm run bench`                                  | board sampler throughput                                         |
-| `npm run bench:browser`                          | generation time inside Chromium and WebKit                       |
-| `npm run exp:enumerate`, `exp:bias`, `exp:dig`   | generator experiments (see below)                                |
+| command                                                                     | what it does                                                     |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `npm run dev`                                                               | dev server with hot reload at http://localhost:5173/5-to-5/      |
+| `npm test` / `npm run test:watch`                                           | unit and DOM tests (Vitest)                                      |
+| `npm run test:e2e`                                                          | browser tests (Playwright, desktop Chromium + iPhone WebKit)     |
+| `npm run coverage`                                                          | unit tests with a coverage report in `coverage/`                 |
+| `npm run check`                                                             | lint, typecheck, tests and production build                      |
+| `npm run build` / `npm run preview`                                         | production build in `dist/` and a local preview                  |
+| `npm run puzzle -- --difficulty 5 --solution`                               | generate puzzles in the terminal (`--seed`, `--count`, `--json`) |
+| `npm run bench`                                                             | board sampler throughput                                         |
+| `npm run bench:browser`                                                     | generation time inside Chromium and WebKit                       |
+| `npm run exp:enumerate`, `exp:bias`, `exp:dig`, `exp:grading`, `exp:levels` | generator experiments (see below)                                |
 
 To run the browser tests against the deployed site: `E2E_BASE_URL=https://alonkellner.com/5-to-5/ npm run test:e2e`.
 
@@ -65,8 +65,8 @@ Open the folder and accept the recommended extensions (ESLint, Prettier, Vitest)
 
 ### Useful URLs
 
-- `?d=expert` starts with a difficulty (`easy`, `medium`, `hard`, `expert`).
-- `?seed=abc&d=hard` always generates the same puzzle.
+- `?d=6` starts with a difficulty level from 1 (Beginner) to 7 (Master).
+- `?seed=abc&d=5` always generates the same puzzle.
 - `?p=<code>` opens an exact puzzle; the app keeps the current puzzle in the address bar, so copying
   the URL shares it.
 
@@ -97,12 +97,16 @@ legacy/            the original single-file prototype and Colab experiments
    valid board is equally likely. Rules are checked while the shuffle is still being built, so most
    attempts stop after a few tiles (about 0.3 s per board).
 2. **Clues:** start from all 65 clues and remove them in random order, keeping each removal only if
-   the puzzle stays solvable with the deductions allowed at the chosen difficulty. What remains is
-   a set where every clue is needed.
+   the puzzle stays unique and no harder than a target inside the chosen level.
 
 The solver treats the hidden rules as unknowns next to the cells and propagates at five levels
-(counts and relations → never rules → must rules → exactness → single hypotheses). Difficulty is
-the level a puzzle needs; "expert" puzzles need guessing.
+(counts and relations → never rules → must rules → exactness → single hypotheses).
+
+**Difficulty:** the grader solves each puzzle like a person, always using the easiest deduction that
+makes progress, and adds up the effort (harder deductions and guesses cost more). The score grows
+by 100 for every ~2.5× more effort, and the level (1 Beginner … 7 Master) is the score rounded to
+hundreds. The generator aims each puzzle at the middle of its level, so levels average about
+100, 200, … 700.
 
 The experiments behind these choices (exact count of all 1,178,718,720 valid boards, bias tests of
 candidate samplers, and dig and difficulty measurements) are in

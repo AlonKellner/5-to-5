@@ -102,12 +102,22 @@ function propagateWithProbing(s: SolverState, clues: ClueSet): boolean {
   }
 }
 
-function propagateDeductions(s: SolverState, clues: ClueSet, level: number): boolean {
+/** Applies one round of every deduction up to `level` (no fixpoint). Returns false on contradiction. */
+export function propagateRound(s: SolverState, clues: ClueSet, level: number): boolean {
+  return propagateDeductions(s, clues, level, 1);
+}
+
+function propagateDeductions(
+  s: SolverState,
+  clues: ClueSet,
+  level: number,
+  maxRounds = Number.POSITIVE_INFINITY,
+): boolean {
   const relations = clues.relations;
   let lastMust = -1;
   let lastNever = -1;
 
-  for (;;) {
+  for (let round = 1; ; round++) {
     let changed = false;
 
     for (let e = 0; e < EDGE_COUNT; e++) {
@@ -292,6 +302,6 @@ function propagateDeductions(s: SolverState, clues: ClueSet, level: number): boo
       }
     }
 
-    if (!changed) return true;
+    if (!changed || round >= maxRounds) return true;
   }
 }

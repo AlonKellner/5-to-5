@@ -4,7 +4,7 @@
  */
 import { performance } from 'node:perf_hooks';
 import { countClueKinds } from '../../src/core/clues';
-import { measureDifficulty } from '../../src/core/generator/difficulty';
+import { gradePuzzle } from '../../src/core/generator/grade';
 import { digClues, type DigCriterion, type DigOrder } from '../../src/core/generator/dig';
 import { Rng } from '../../src/core/rng';
 import { LEVEL } from '../../src/core/solver/propagate';
@@ -41,10 +41,11 @@ for (const variant of variants) {
     const kinds = countClueKinds(mask);
     clues.push(kinds.total);
     tiles.push(kinds.tiles);
-    const stats = measureDifficulty(board, mask);
-    levels[stats.propagationLevel ?? 5]!++;
-    nodes.push(stats.nodes);
-    depths.push(stats.guessDepth);
+    const { stats } = gradePuzzle(board, mask);
+    const hardest = stats.guessNodes > 0 ? 5 : stats.steps.reduce((m, n, l) => (n > 0 ? l : m), 0);
+    levels[hardest]!++;
+    nodes.push(stats.guessNodes);
+    depths.push(stats.effort);
   });
   const pct = (n: number) => `${Math.round((100 * n) / boards.length)}%`;
   rows.push([
@@ -72,8 +73,8 @@ console.log(
       'clues p10–p90',
       'tiles',
       'needs P0/P1/P2/P3/P4/search',
-      'nodes p50/p90/max',
-      'depth p50/max',
+      'guess nodes p50/p90/max',
+      'effort p50/max',
     ],
     rows,
   ),

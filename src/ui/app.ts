@@ -1,7 +1,12 @@
 import { decodePuzzle, encodePuzzle } from '../core/codec';
 import type { GenerateProgress } from '../core/generator/generate';
 import { ratePuzzle } from '../core/generator/generate';
-import { DIFFICULTY_LEVELS, type DifficultyLevel, type Puzzle } from '../core/puzzle';
+import {
+  DIFFICULTY_NAMES,
+  parseDifficulty,
+  type DifficultyLevel,
+  type Puzzle,
+} from '../core/puzzle';
 import { Rng } from '../core/rng';
 import {
   canHint,
@@ -43,16 +48,12 @@ export interface AppOptions {
 
 export const STORAGE_KEY = '5-to-5:game';
 
-const DEFAULT_DIFFICULTY: DifficultyLevel = 'medium';
+const DEFAULT_DIFFICULTY: DifficultyLevel = 3;
 
-const capitalize = (text: string) => text[0]!.toUpperCase() + text.slice(1);
-
-function isDifficulty(value: string | null): value is DifficultyLevel {
-  return DIFFICULTY_LEVELS.includes(value as DifficultyLevel);
-}
+const levelLabel = (level: DifficultyLevel) => `${DIFFICULTY_NAMES[level]} (${level}/7)`;
 
 function describeProgress(difficulty: DifficultyLevel, progress?: GenerateProgress): string {
-  const base = `Generating ${difficulty} puzzle…`;
+  const base = `Generating a ${DIFFICULTY_NAMES[difficulty].toLowerCase()} puzzle…`;
   if (!progress) return base;
   if (progress.phase === 'clues') return `${base} choosing clues`;
   return `${base} ${(progress.trials / 1e6).toFixed(1)}M boards tried`;
@@ -108,8 +109,8 @@ export class App {
     root.ownerDocument.addEventListener('keydown', this.onKeyDown);
 
     this.on('difficulty-select', 'change', () => {
-      const value = (this.el['difficulty-select'] as HTMLSelectElement).value;
-      if (isDifficulty(value)) this.difficulty = value;
+      const value = parseDifficulty((this.el['difficulty-select'] as HTMLSelectElement).value);
+      if (value) this.difficulty = value;
     });
     this.on('new-btn', 'click', () => void this.newPuzzle(this.difficulty));
     this.on('reset-btn', 'click', () => this.puzzle && this.setState(createGame(this.puzzle)));
@@ -127,8 +128,7 @@ export class App {
 
   async start(): Promise<void> {
     const params = this.options.url.searchParams;
-    const d = params.get('d');
-    if (isDifficulty(d)) this.difficulty = d;
+    this.difficulty = parseDifficulty(params.get('d')) ?? this.difficulty;
     const code = params.get('p');
     if (code) {
       try {
@@ -171,9 +171,9 @@ export class App {
   private load(puzzle: Puzzle): void {
     this.puzzle = puzzle;
     if (puzzle.rating) this.difficulty = puzzle.rating.level;
-    (this.el['difficulty-select'] as HTMLSelectElement).value = this.difficulty;
+    (this.el['difficulty-select'] as HTMLSelectElement).value = String(this.difficulty);
     this.el['puzzle-info']!.textContent = puzzle.rating
-      ? `${capitalize(puzzle.rating.level)} · score ${puzzle.rating.score}`
+      ? `${levelLabel(puzzle.rating.level)} · score ${puzzle.rating.score}`
       : '';
     this.el['win-modal']!.hidden = true;
     this.puzzleCode = encodePuzzle(puzzle);
@@ -184,7 +184,7 @@ export class App {
     const url = new URL(this.options.url);
     url.search = '';
     url.searchParams.set('p', this.puzzleCode);
-    url.searchParams.set('d', this.difficulty);
+    url.searchParams.set('d', String(this.difficulty));
     this.options.url = url;
     this.options.onUrlChange?.(url);
   }

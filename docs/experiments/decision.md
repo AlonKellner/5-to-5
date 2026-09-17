@@ -111,23 +111,88 @@ Findings:
   an alternative found when removing clue _s_ differs from the solution only on hidden clues and on
   _s_, which is then kept.
 
-**Decision: difficulty tiers**
+**First decision (superseded by Exp-6):** four tiers by the strongest deduction needed. Scores
+jumped from ~250 (medium) to ~500 (hard), because the score was essentially 100 × tier.
 
-| tier   | dig criterion                  | accepted when the puzzle needs | typical clues |
-| ------ | ------------------------------ | ------------------------------ | ------------- |
-| easy   | solvable at P1                 | P0–P1 (in practice P1)         | ~17.5         |
-| medium | solvable at P3                 | P2–P3                          | ~15           |
-| hard   | solvable at P4                 | P4                             | ~13           |
-| expert | unique (200k search nodes cap) | search                         | ~12           |
+## Exp-6: effort-based score and seven levels
 
-Every tier except expert is accepted on the first dig; expert accepts ~81% of digs, and the
-generator retries up to 3 digs per board before sampling a new board.
+Goal: 7 levels whose average scores are about 100 × level, with even steps between levels.
+
+**Grader** (`src/core/generator/grade.ts`): solve like a person. Repeatedly apply _one round_ of the
+weakest deduction that makes progress (counts and relations, never rules, must rules, exactness);
+when none helps, find one hypothesis that leads to a contradiction; when that fails too, search
+from the stuck position. Effort is a weighted sum:
+
+| step                              | weight |
+| --------------------------------- | ------ |
+| round of counts/relations (P0)    | 1      |
+| round of never reasoning (P1)     | 2      |
+| round of must reasoning (P2)      | 3      |
+| round of exactness reasoning (P3) | 5      |
+| one eliminating hypothesis (P4)   | 8      |
+| one search node once stuck        | 10     |
+
+Counting single rounds matters: with full fixpoints, every puzzle below P4 took exactly one step
+per level, so nothing distinguished puzzles within a tier.
+
+`npm run exp:grading -- --boards 60` graded puzzles dug with every criterion, plus easier variants
+with 2, 4 or 8 hidden clues added back. log₂(effort) turned out continuous across the pool:
+
+| puzzles                                | log₂ effort p10 / p50 / p90 |
+| -------------------------------------- | --------------------------- |
+| P1-dug                                 | 3.2 / 3.6 / 4.0             |
+| P2- and P3-dug                         | 4.4 / 4.9 / 5.3             |
+| P4-dug with 2–4 clues added back       | 4.4–5.6 / 6.2–6.9 / 7.1–7.8 |
+| P4-dug                                 | 7.4 / 8.0 / 8.4             |
+| uniqueness-dug with 2 clues added back | 6.4 / 7.7 / 11.2            |
+| uniqueness-dug                         | 8.3 / 11.2 / 14.4           |
+
+**Score** = 100 + 75 × (log₂ effort − 3.5), so a score of 100 is a typical never-rule puzzle, 700
+a typical minimal puzzle that needs guessing, and each 100 points is ~2.5× more effort. A puzzle's
+level is its score rounded to the nearest hundred, clamped to 1–7.
+
+**Generation per level:** dig with the criterion "unique and score ≤ cap", with the cap drawn from
+[100·level − 20, 100·level + 49]. A dig ends at or below its cap (usually ~20 below), so the caps
+sit in the upper part of the band. Up to 6 digs per board; keep the in-level result closest to
+100·level and stop early within ±15. Calibration (`npm run exp:levels -- --boards 60 --digs N`):
+
+| level      | 1 dig, caps over the whole band: mean score / board yields level | 6 digs, final: mean score (range) | board yields level | ms per board mean / p90 | clues | needs guessing |
+| ---------- | ---------------------------------------------------------------- | --------------------------------- | ------------------ | ----------------------- | ----- | -------------- |
+| 1 Beginner | 78 / 100%                                                        | 103 (87–123)                      | 100%               | 2 / 4                   | 18.1  | 0%             |
+| 2 Easy     | 194 / 90%                                                        | 197 (177–216)                     | 100%               | 11 / 27                 | 15.5  | 0%             |
+| 3 Medium   | 288 / 83%                                                        | 301 (284–316)                     | 100%               | 22 / 50                 | 14.9  | 0%             |
+| 4 Tricky   | 382 / 80%                                                        | 400 (385–415)                     | 100%               | 53 / 111                | 13.7  | 3%             |
+| 5 Hard     | 484 / 48%                                                        | 501 (456–533)                     | 98%                | 124 / 227               | 13.2  | 92%            |
+| 6 Expert   | 576 / 38%                                                        | 593 (553–632)                     | 95%                | 108 / 189               | 12.8  | 100%           |
+| 7 Master   | 676 / 18%                                                        | 691 (653–742)                     | 90%                | 147 / 215               | 12.6  | 100%           |
+
+Whole-puzzle generation in browsers (`npm run bench:browser`, 25 puzzles per level, including
+board sampling):
+
+| level | Chromium mean / median / p90 ms | WebKit mean / median / p90 ms |
+| ----- | ------------------------------- | ----------------------------- |
+| 1     | 259 / 188 / 468                 | 175 / 125 / 301               |
+| 2     | 306 / 174 / 828                 | 203 / 121 / 538               |
+| 3     | 201 / 148 / 405                 | 134 / 102 / 263               |
+| 4     | 250 / 237 / 470                 | 165 / 156 / 319               |
+| 5     | 378 / 349 / 691                 | 257 / 229 / 453               |
+| 6     | 420 / 303 / 664                 | 290 / 211 / 469               |
+| 7     | 432 / 398 / 880                 | 297 / 268 / 612               |
+
+Notes:
+
+- The effort score is not strictly monotone in the clues (removing a clue can occasionally open an
+  easier solving path), so score-capped digs do not guarantee every remaining clue is necessary.
+  Every puzzle is still verified unique.
+- The weights and the 3.5 / 11.5 anchors are judgment calls; playtesting should confirm that the
+  steps between levels feel even.
 
 ## Known limitations of "unbiased"
 
 - Boards are exactly uniform over all valid boards.
 - Given a board, clue sets are uniformly random _dig orders_, not uniform over all minimal clue
   sets (no known efficient way to sample those).
-- Expert-tier retries slightly favor boards whose digs more often need search.
-- Tiers are based on solver deduction levels, a proxy for human difficulty; they should be checked
-  by playing a few puzzles of each tier.
+- Level retries (up to 6 digs per board, then a new board) slightly favor boards that more easily
+  produce puzzles of the requested level, most noticeably for level 7 (90% of boards succeed).
+- Levels are based on a model of solving effort, a proxy for human difficulty; they should be
+  checked by playing a few puzzles of each level.

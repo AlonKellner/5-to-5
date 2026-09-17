@@ -5,6 +5,7 @@ import { Rng } from '../rng';
 import { countSolutions, solveByPropagation } from '../solver/search';
 import { LEVEL } from '../solver/propagate';
 import { digClues, shuffledSlots } from './dig';
+import { gradePuzzle } from './grade';
 
 const solution = legacySolution();
 
@@ -98,5 +99,17 @@ describe('digClues order option', () => {
       ).tiles;
     }
     expect(tilesWhenTilesFirst).toBeLessThan(tilesWhenRelationsFirst);
+  });
+});
+
+describe('digClues with a score cap', () => {
+  it.each([180, 420])('leaves a unique puzzle with a score of at most %i', (maxScore) => {
+    const { mask } = digClues(solution, new Rng(`cap-${maxScore}`), {
+      criterion: { kind: 'score', maxScore },
+    });
+    const grade = gradePuzzle(solution, mask);
+    expect(grade.unique).toBe(true);
+    expect(grade.score).toBeLessThanOrEqual(maxScore);
+    expect(grade.score).toBeGreaterThan(maxScore - 100);
   });
 });
