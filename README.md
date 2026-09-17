@@ -49,7 +49,10 @@ npx playwright install chromium webkit   # only for end-to-end tests
 | `npm run build` / `npm run preview`              | production build in `dist/` and a local preview                  |
 | `npm run puzzle -- --difficulty hard --solution` | generate puzzles in the terminal (`--seed`, `--count`, `--json`) |
 | `npm run bench`                                  | board sampler throughput                                         |
+| `npm run bench:browser`                          | generation time inside Chromium and WebKit                       |
 | `npm run exp:enumerate`, `exp:bias`, `exp:dig`   | generator experiments (see below)                                |
+
+To run the browser tests against the deployed site: `E2E_BASE_URL=https://alonkellner.com/5-to-5/ npm run test:e2e`.
 
 ### VS Code
 
