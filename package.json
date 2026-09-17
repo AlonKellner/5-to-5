@@ -25,7 +25,8 @@
     "exp:bias": "tsx scripts/experiments/bias.ts",
     "exp:dig": "tsx scripts/experiments/dig.ts",
     "exp:calibrate": "tsx scripts/experiments/difficulty-calibration.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "bench:browser": "playwright test --config playwright.bench.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

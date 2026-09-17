@@ -46,8 +46,18 @@ trials stop after a few cells. A property test replays 20,000 boards through the
 checker and compares with the full validator.
 
 Board sampling dominates generation time. In the browser it runs in a Web Worker with progress
-reports, and the next puzzle can be pre-generated. **Still to measure:** Safari and a phone,
-through the running app (open the dev tools console while generating).
+reports.
+
+Whole-puzzle generation inside real browser engines (`npm run bench:browser`, 25 puzzles per tier,
+same Mac):
+
+| engine                           | easy: mean / median / p90 / max | medium                | hard                   | expert                |
+| -------------------------------- | ------------------------------- | --------------------- | ---------------------- | --------------------- |
+| Chromium (V8)                    | 360 / 201 / 716 / 3108 ms       | 228 / 180 / 562 / 650 | 262 / 217 / 670 / 1008 | 251 / 200 / 465 / 857 |
+| WebKit (Safari's JavaScriptCore) | 238 / 127 / 447 / 2132 ms       | 149 / 122 / 380 / 405 | 174 / 138 / 460 / 634  | 171 / 139 / 318 / 592 |
+
+The WebKit run emulates an iPhone screen but uses the Mac's CPU; phones are typically 2–4× slower,
+which still keeps the median well under a second. **Still to measure:** a real phone.
 
 ## Exp-3: sampler bias
 

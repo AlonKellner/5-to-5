@@ -75,19 +75,13 @@ describe('digClues with a propagation criterion', () => {
   );
 
   it('needs at least as many clues at a weaker level (on average)', () => {
-    let weak = 0;
-    let strong = 0;
-    for (let i = 0; i < 4; i++) {
-      weak += countClueKinds(
-        digClues(solution, new Rng(`w${i}`), {
-          criterion: { kind: 'propagation', level: LEVEL.NEVER },
-        }).mask,
-      ).total;
-      strong += countClueKinds(
-        digClues(solution, new Rng(`w${i}`), { criterion: { kind: 'unique' } }).mask,
-      ).total;
-    }
-    expect(weak).toBeGreaterThanOrEqual(strong);
+    const total = (level: number) =>
+      [0, 1, 2, 3]
+        .map((i) =>
+          digClues(solution, new Rng(`w${i}`), { criterion: { kind: 'propagation', level } }),
+        )
+        .reduce((sum, r) => sum + countClueKinds(r.mask).total, 0);
+    expect(total(LEVEL.NEVER)).toBeGreaterThanOrEqual(total(LEVEL.EXACT));
   });
 });
 

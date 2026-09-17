@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { flat, HTML_RULESET, HTML_SOLUTION } from '../../../test/fixtures/legacy';
 import { legacyPuzzleMask } from '../../../test/fixtures/legacyPuzzle';
+import { sampledBoards } from '../../../test/fixtures/boards';
 import { bruteForceSolutions } from '../../../test/reference/bruteSolver';
 import {
   createBoard,
@@ -20,7 +21,6 @@ import {
   SLOT_COUNT,
   type ClueMask,
 } from '../clues';
-import { sampleBoardRejection } from '../generator/sampleBoard';
 import { PERMUTATIONS } from '../rules';
 import { Rng } from '../rng';
 import { deriveRuleset } from '../validator';
@@ -146,9 +146,7 @@ describe('countSolutions agrees with the brute-force oracle', () => {
   const boards: Board[] = [];
 
   beforeAll(() => {
-    const rng = new Rng('oracle-boards');
-    for (let i = 0; i < 4; i++) boards.push(sampleBoardRejection(rng)!.board);
-    boards.push(legacyBoard);
+    boards.push(...sampledBoards().slice(0, 4), legacyBoard);
   });
 
   it('on random dense-to-medium clue sets', () => {
