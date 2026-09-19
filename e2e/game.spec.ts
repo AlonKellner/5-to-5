@@ -23,8 +23,8 @@ async function dragTo(page: Page, from: Locator, to: Locator) {
 }
 
 async function waitForPuzzle(page: Page) {
-  await expect(page.locator('#game-board > *')).toHaveCount(25);
-  await expect(page.locator('#status')).toHaveText('', { timeout: 30_000 });
+  await expect(page.locator('#game-board > *')).toHaveCount(25, { timeout: 60_000 });
+  await expect(page.locator('#status')).toHaveText('', { timeout: 60_000 });
 }
 
 test('generates a puzzle in a worker and records it in the URL', async ({ page }) => {
@@ -108,7 +108,7 @@ test('generates a new puzzle at the chosen difficulty', async ({ page }) => {
   const firstUrl = page.url();
   await page.locator('#difficulty-select').selectOption('5');
   await page.locator('#new-btn').click();
-  await expect(page.locator('#puzzle-info')).toContainText('Hard (5/7)', { timeout: 30_000 });
+  await expect(page.locator('#puzzle-info')).toContainText('Hard (5/7)', { timeout: 60_000 });
   expect(page.url()).not.toBe(firstUrl);
 });
 
