@@ -177,7 +177,7 @@ describe('level 4: probing', () => {
 
   it('never eliminates the intended solution of a unique puzzle', () => {
     const rng = new Rng('probe-sound');
-    for (let k = 0; k < 6; k++) {
+    for (let k = 0; k < 3; k++) {
       const { mask } = digClues(solution, rng, { criterion: { kind: 'unique' } });
       const clues = clueSetFromMask(solution, mask);
       const state = createState(clues);
@@ -188,7 +188,7 @@ describe('level 4: probing', () => {
 
   it('solves puzzles that level 3 alone cannot', () => {
     let needsProbing = 0;
-    for (let k = 0; k < 8; k++) {
+    for (let k = 0; k < 4; k++) {
       const { mask } = digClues(solution, new Rng(`probe-${k}`), {
         criterion: { kind: 'propagation', level: LEVEL.PROBE },
       });

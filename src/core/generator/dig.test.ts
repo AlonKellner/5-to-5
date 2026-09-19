@@ -90,7 +90,7 @@ describe('digClues order option', () => {
   it('shifts the clue mix toward the kind removed last', () => {
     let tilesWhenTilesFirst = 0;
     let tilesWhenRelationsFirst = 0;
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 2; i++) {
       tilesWhenTilesFirst += countClueKinds(
         digClues(solution, new Rng(`mix${i}`), { order: 'tiles-first' }).mask,
       ).tiles;

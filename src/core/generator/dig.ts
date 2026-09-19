@@ -21,6 +21,8 @@ export type DigCriterion =
 export interface DigOptions {
   criterion?: DigCriterion;
   order?: DigOrder;
+  /** Clue set to dig from; defaults to every clue. */
+  start?: ClueMask;
 }
 
 export interface DigResult {
@@ -50,10 +52,11 @@ export function shuffledSlots(rng: Rng, order: DigOrder): number[] {
  */
 export function digClues(solution: Board, rng: Rng, options: DigOptions = {}): DigResult {
   const criterion = options.criterion ?? { kind: 'unique' };
-  const mask = fullMask();
+  const mask = options.start ? options.start.slice() : fullMask();
   const result: DigResult = { mask, checks: 0, nodes: 0, timeouts: 0 };
 
   for (const slot of shuffledSlots(rng, options.order ?? 'random')) {
+    if (!mask[slot]) continue;
     mask[slot] = 0;
 
     result.checks++;

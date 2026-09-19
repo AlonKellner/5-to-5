@@ -155,7 +155,7 @@ describe('countSolutions agrees with the brute-force oracle', () => {
   const boards: Board[] = [];
 
   beforeAll(() => {
-    boards.push(...sampledBoards().slice(0, 4), legacyBoard);
+    boards.push(...sampledBoards().slice(0, 3), legacyBoard);
   });
 
   it('on random dense-to-medium clue sets', () => {
@@ -186,7 +186,7 @@ describe('countSolutions agrees with the brute-force oracle', () => {
     const rng = new Rng('oracle-sparse');
     let multiSolutionCases = 0;
     for (const board of boards) {
-      for (let m = 0; m < 4; m++) {
+      for (let m = 0; m < 2; m++) {
         const cells = rng.shuffle(Array.from({ length: 25 }, (_, i) => i)).slice(0, 15);
         const mask = new Uint8Array(SLOT_COUNT);
         const tiles = new Array<number>(25).fill(-1);

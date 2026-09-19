@@ -2,15 +2,17 @@ import type { Board } from '../board';
 import type { ClueMask } from '../clues';
 import type { DifficultyLevel, Puzzle, Rating } from '../puzzle';
 import { Rng } from '../rng';
+import { LEVEL } from '../solver/propagate';
 import { digClues } from './dig';
 import { gradePuzzle } from './grade';
+import { selectCluesByReasoning } from './selectClues';
 import { EarlyRejectionSampler } from './sampleBoard';
 
 /** Bump when generation changes, so old seeds are not silently remapped to different puzzles. */
-export const GENERATOR_VERSION = 2;
+export const GENERATOR_VERSION = 3;
 
 /** Search budget for uniqueness checks while digging; puzzles that need more are not generated. */
-const MAX_SEARCH_NODES = 200_000;
+const MAX_SEARCH_NODES = 20_000;
 
 export function ratePuzzle(solution: Board, mask: ClueMask): Rating {
   const { level, score, stats } = gradePuzzle(solution, mask);
@@ -28,6 +30,25 @@ export function scoreBand(level: DifficultyLevel): { min: number; max: number } 
   return { min: level * 100 - 50, max: level * 100 + 49 };
 }
 
+export type ClueStyle = 'reasoning' | 'random';
+
+/**
+ * The chain is built with the weakest reasoning, which places the most clues. Stronger chains
+ * place fewer clues and leave too little to prune, which makes hard levels unreachable
+ * (docs/experiments/decision.md).
+ */
+const CHAIN_LEVEL = LEVEL.NEVER;
+
+/**
+ * The clue set a level's digs start from: with the reasoning style, clues placed where the solver
+ * got stuck; with the random style, every clue.
+ */
+function startingClues(solution: Board, rng: Rng, style: ClueStyle): ClueMask | undefined {
+  return style === 'reasoning'
+    ? selectCluesByReasoning(solution, rng, { solveLevel: CHAIN_LEVEL }).mask
+    : undefined;
+}
+
 /** A dig this close to the level's center is accepted without trying more digs. */
 const GOOD_ENOUGH = 15;
 
@@ -41,15 +62,18 @@ export function puzzleForBoard(
   difficulty: DifficultyLevel,
   rng: Rng,
   digs: number,
+  style: ClueStyle = 'reasoning',
 ): { mask: ClueMask; rating: Rating } | null {
   const band = scoreBand(difficulty);
   const center = difficulty * 100;
+  const start = startingClues(solution, rng.split(), style);
   let best: { mask: ClueMask; rating: Rating } | null = null;
   for (let dig = 0; dig < digs; dig++) {
     const lowestCap = band.min + CAP_OFFSET;
     const maxScore = lowestCap + rng.nextInt(band.max - lowestCap + 1);
     const { mask } = digClues(solution, rng.split(), {
       criterion: { kind: 'score', maxScore, maxNodes: MAX_SEARCH_NODES },
+      start,
     });
     const rating = ratePuzzle(solution, mask);
     if (rating.level !== difficulty) continue;
@@ -72,6 +96,8 @@ export interface GenerateOptions {
   progressInterval?: number;
   /** Clue digs tried on one board before sampling a new one. */
   digsPerBoard?: number;
+  /** How clues are chosen: from the solver's reasoning chain (default) or by random removal. */
+  clueStyle?: ClueStyle;
   maxBoards?: number;
 }
 
@@ -90,7 +116,13 @@ export function generatePuzzle(options: GenerateOptions): Puzzle {
       onProgress?.({ phase: 'board', attempt, trials: sampler.trials });
     }
     onProgress?.({ phase: 'clues', attempt });
-    const found = puzzleForBoard(solution, difficulty, rng.split(), digsPerBoard);
+    const found = puzzleForBoard(
+      solution,
+      difficulty,
+      rng.split(),
+      digsPerBoard,
+      options.clueStyle ?? 'reasoning',
+    );
     if (found) return { solution, seed, ...found };
   }
   throw new Error(`Could not generate a level ${difficulty} puzzle after ${maxBoards} boards`);

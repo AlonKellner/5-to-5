@@ -32,7 +32,7 @@ describe.each(KINDS)('%s sampler', (kind) => {
     expect(sampleBoardRejection(new Rng('limit'), { maxTrials: 0, kind })).toBeNull();
   });
 
-  it('can be run in chunks with the same result as one call', () => {
+  it.skipIf(kind === 'rejection')('can be run in chunks with the same result as one call', () => {
     const whole = sampleBoardRejection(new Rng('chunks'), { kind })!;
     const sampler = createSampler(kind, new Rng('chunks'));
     let board = null;

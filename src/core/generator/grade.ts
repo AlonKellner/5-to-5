@@ -1,17 +1,10 @@
 import type { Board } from '../board';
 import { clueSetFromMask, countClueKinds, type ClueMask, type ClueSet } from '../clues';
-import { COLOR_COUNT } from '../constants';
 import type { DifficultyLevel, GradeStats } from '../puzzle';
-import { POPCOUNT } from '../solver/bits';
-import { LEVEL, propagate, propagateRound } from '../solver/propagate';
+import { LEVEL } from '../solver/propagate';
+import { reasonStep } from '../solver/reason';
 import { countSolutions } from '../solver/search';
-import {
-  boardOfSolvedState,
-  createState,
-  isSolved,
-  STATE_SIZE,
-  type SolverState,
-} from '../solver/state';
+import { boardOfSolvedState, createState, isSolved } from '../solver/state';
 import { deriveRuleset } from '../validator';
 
 /** Effort of one deduction round per level: counts, never, must, exactness, one hypothesis. */
@@ -38,34 +31,6 @@ export interface Grade {
   stats: GradeStats;
 }
 
-function candidateCount(s: SolverState): number {
-  let n = 0;
-  for (let i = 0; i < STATE_SIZE; i++) n += POPCOUNT[s[i]!]!;
-  return n;
-}
-
-const hypothesis = new Uint8Array(STATE_SIZE);
-
-/** Finds one candidate whose assumption leads to a contradiction and removes it from `s`. */
-function eliminateByHypothesis(s: SolverState, clues: ClueSet): boolean {
-  for (let slot = 0; slot < STATE_SIZE; slot++) {
-    const m = s[slot]!;
-    if (POPCOUNT[m]! < 2) continue;
-    for (let c = 0; c < COLOR_COUNT; c++) {
-      const bit = 1 << c;
-      if (!(m & bit)) continue;
-      hypothesis.set(s);
-      hypothesis[slot] = bit;
-      const consistent = propagate(hypothesis, clues, LEVEL.EXACT);
-      if (!consistent || (isSolved(hypothesis) && !deriveRuleset(boardOfSolvedState(hypothesis)))) {
-        s[slot] = m & ~bit;
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 /**
  * Solves the way a person would: always apply one round of the weakest deduction that makes
  * progress, try single hypotheses only when no deduction helps, and search only when stuck.
@@ -81,32 +46,22 @@ export function gradeClues(
   stats: TraceStats;
 } {
   const steps = [0, 0, 0, 0, 0];
-  let s = createState(clues);
+  const s = createState(clues);
   let guessNodes = 0;
   let unique = false;
   let timedOut = false;
 
-  solving: for (;;) {
+  for (;;) {
     if (isSolved(s)) {
       unique = deriveRuleset(boardOfSolvedState(s)) !== null;
       break;
     }
-    const before = candidateCount(s);
-    for (let level = LEVEL.COUNTS; level <= LEVEL.EXACT; level++) {
-      const next = s.slice();
-      if (!propagateRound(next, clues, level)) break solving;
-      if (candidateCount(next) < before) {
-        steps[level]!++;
-        s = next;
-        continue solving;
-      }
-    }
-    const next = s.slice();
-    if (eliminateByHypothesis(next, clues)) {
-      steps[LEVEL.PROBE]!++;
-      s = next;
+    const step = reasonStep(s, clues, LEVEL.PROBE);
+    if (step && step.gain >= 0) {
+      steps[step.level]!++;
       continue;
     }
+    if (step) break; // contradiction: no solution
     const search = countSolutions(clues, { limit: 2, startState: s, maxNodes: options.maxNodes });
     guessNodes = search.nodes;
     unique = search.status === 'complete' && search.count === 1;

@@ -28,7 +28,8 @@
     "test:e2e": "playwright test",
     "bench:browser": "playwright test --config playwright.bench.config.ts",
     "exp:levels": "tsx scripts/experiments/levels.ts",
-    "exp:grading": "tsx scripts/experiments/grading.ts"
+    "exp:grading": "tsx scripts/experiments/grading.ts",
+    "exp:clues": "tsx scripts/experiments/clues.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

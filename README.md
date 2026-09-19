@@ -81,8 +81,8 @@ src/
     validator.ts   the strict board rules
     clues.ts       tile and relation clues (65 slots)
     codec.ts       compact puzzle codes for links
-    solver/        constraint propagation + search; counts solutions
-    generator/     board sampling, clue digging, difficulty rating
+    solver/        constraint propagation, person-like reasoning steps, search
+    generator/     board sampling, clue selection, difficulty rating
   game/state.ts    immutable game state: moves, notes, checkpoints, hints, win detection
   ui/              rendering and interaction (pointer events for mouse and touch)
   worker/          runs the generator in a Web Worker
@@ -96,8 +96,10 @@ legacy/            the original single-file prototype and Colab experiments
 1. **Board:** shuffle the 25 tiles uniformly and keep the result only if it follows the rules. Every
    valid board is equally likely. Rules are checked while the shuffle is still being built, so most
    attempts stop after a few tiles (about 0.3 s per board).
-2. **Clues:** start from all 65 clues and remove them in random order, keeping each removal only if
-   the puzzle stays unique and no harder than a target inside the chosen level.
+2. **Clues:** let the solver reason from an empty board and, whenever it gets stuck, add the clue
+   that unblocks the most progress. Every clue is placed where solving stalls. The chain is then
+   pruned: clues that later reasoning made unnecessary are removed, as long as the puzzle stays
+   unique and no harder than a target inside the chosen level.
 
 The solver treats the hidden rules as unknowns next to the cells and propagates at five levels
 (counts and relations → never rules → must rules → exactness → single hypotheses).

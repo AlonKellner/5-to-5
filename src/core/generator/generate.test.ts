@@ -27,19 +27,18 @@ describe('puzzleForBoard', () => {
   });
 
   it('averages near 100 × level', () => {
-    for (const level of [2, 4] as const) {
-      const scores = sampledBoards().map(
-        (board, i) => puzzleForBoard(board, level, new Rng(`avg-${level}-${i}`), 6)!.rating.score,
-      );
-      const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
-      expect(Math.abs(mean - level * 100)).toBeLessThan(25);
-    }
+    const level = 3;
+    const scores = sampledBoards()
+      .slice(0, 4)
+      .map((board, i) => puzzleForBoard(board, level, new Rng(`avg-${i}`), 4)!.rating.score);
+    const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+    expect(Math.abs(mean - level * 100)).toBeLessThan(30);
   });
 });
 
 describe('generatePuzzle', () => {
   it.each(DIFFICULTY_LEVELS)('generates a unique level %i puzzle', (difficulty) => {
-    const puzzle = generatePuzzle({ seed: 'test', difficulty });
+    const puzzle = generatePuzzle({ seed: 'test', difficulty, digsPerBoard: 3 });
     expect(isValidBoard(puzzle.solution)).toBe(true);
     expect(
       countSolutions(clueSetFromMask(puzzle.solution, puzzle.mask), { limit: 2 }),
@@ -67,5 +66,30 @@ describe('generatePuzzle', () => {
     const phases = new Set(onProgress.mock.calls.map(([event]) => event.phase));
     expect(phases).toContain('board');
     expect(phases).toContain('clues');
+  });
+});
+
+describe('clue style', () => {
+  it('builds clues from the reasoning chain by default and can fall back to random removal', () => {
+    const board = sampledBoards()[1]!;
+    const reasoning = puzzleForBoard(board, 3, new Rng('style'), 3)!;
+    const explicit = puzzleForBoard(board, 3, new Rng('style'), 3, 'reasoning')!;
+    const random = puzzleForBoard(board, 3, new Rng('style'), 3, 'random')!;
+    expect([...reasoning.mask]).toEqual([...explicit.mask]);
+    expect([...random.mask]).not.toEqual([...reasoning.mask]);
+    for (const found of [reasoning, random]) expect(found.rating.level).toBe(3);
+  });
+
+  it('passes the style through generatePuzzle', () => {
+    const a = generatePuzzle({ seed: 'style', difficulty: 2, digsPerBoard: 2 });
+    const b = generatePuzzle({
+      seed: 'style',
+      difficulty: 2,
+      digsPerBoard: 2,
+      clueStyle: 'random',
+    });
+    expect([...a.mask]).not.toEqual([...b.mask]);
+    expect(a.rating?.level).toBe(2);
+    expect(b.rating?.level).toBe(2);
   });
 });

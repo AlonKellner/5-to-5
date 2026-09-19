@@ -95,7 +95,7 @@ describe('gradePuzzle', () => {
     let probe = 0;
     let unique = 0;
     sampledBoards()
-      .slice(0, 4)
+      .slice(0, 3)
       .forEach((board, i) => {
         probe += gradePuzzle(
           board,

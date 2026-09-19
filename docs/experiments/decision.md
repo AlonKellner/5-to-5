@@ -167,17 +167,18 @@ sit in the upper part of the band. Up to 6 digs per board; keep the in-level res
 | 7 Master   | 676 / 18%                                                        | 691 (653–742)                     | 90%                | 147 / 215               | 12.6  | 100%           |
 
 Whole-puzzle generation in browsers (`npm run bench:browser`, 25 puzzles per level, including
-board sampling):
+board sampling). These were measured while the machine was busy (load ≈ 4.5), so treat them as
+upper bounds; on an idle machine the same benchmark ran 3–4× faster:
 
 | level | Chromium mean / median / p90 ms | WebKit mean / median / p90 ms |
 | ----- | ------------------------------- | ----------------------------- |
-| 1     | 259 / 188 / 468                 | 175 / 125 / 301               |
-| 2     | 306 / 174 / 828                 | 203 / 121 / 538               |
-| 3     | 201 / 148 / 405                 | 134 / 102 / 263               |
-| 4     | 250 / 237 / 470                 | 165 / 156 / 319               |
-| 5     | 378 / 349 / 691                 | 257 / 229 / 453               |
-| 6     | 420 / 303 / 664                 | 290 / 211 / 469               |
-| 7     | 432 / 398 / 880                 | 297 / 268 / 612               |
+| 1     | 1296 / 799 / 2984               | 617 / 432 / 1585              |
+| 2     | 1674 / 1141 / 3566              | 801 / 547 / 1631              |
+| 3     | 612 / 335 / 1390                | 369 / 198 / 934               |
+| 4     | 1752 / 1183 / 3180              | 886 / 577 / 1851              |
+| 5     | 1953 / 1507 / 3710              | 550 / 394 / 1284              |
+| 6     | 1788 / 1710 / 3466              | 843 / 780 / 1568              |
+| 7     | 2824 / 2035 / 4518              | 1551 / 1088 / 2594            |
 
 Notes:
 
@@ -186,6 +187,57 @@ Notes:
   Every puzzle is still verified unique.
 - The weights and the 3.5 / 11.5 anchors are judgment calls; playtesting should confirm that the
   steps between levels feel even.
+
+## Exp-7: clues chosen by the solver instead of at random
+
+Until now clues were whatever survived random removal, so nothing tied a clue to the reasoning it
+enables. `selectCluesByReasoning` builds the clue set forward instead: reason as far as the allowed
+deductions go, and whenever that stalls, add the clue that unblocks the most progress (ties broken
+at random, so puzzles still vary). Ranking candidates uses plain deductions because it runs for all
+65 slots at every stall.
+
+The generator now starts each dig from such a chain and prunes it down to the level's target score,
+so the clues that remain were all placed where solving stalls, minus the ones later reasoning made
+unnecessary.
+
+`npm run exp:clues -- --boards 40` (clue sets built directly, before any level targeting):
+
+| strategy             | clues | score mean | redundant clues | clued tiles touching |
+| -------------------- | ----- | ---------- | --------------- | -------------------- |
+| dig P3 (random)      | 15.1  | 200        | 9.4             | 48%                  |
+| reasoning P3         | 14.0  | 184        | 6.5             | 66%                  |
+| dig unique (random)  | 12.3  | 693        | 0.0             | 39%                  |
+| reasoning P3 + prune | 11.6  | 495        | 0.0             | 54%                  |
+
+**Chain strength:** a chain built with stronger deductions places fewer clues, which leaves too
+little to prune and makes hard levels unreachable. Per dig at a target score of 500/600/700, a
+chain built with never-rules only lands in the band 67/40/23% of the time, against 27/3/10% for a
+chain that may use hypotheses. The chain is therefore always built with never-rule reasoning, and
+one chain is reused for all digs on a board (which halved generation time).
+
+`npm run exp:levels -- --boards 30 --style reasoning|random`, same boards for both:
+
+| level | clues (reasoning / random) | redundant clues | score mean | board yields level |
+| ----- | -------------------------- | --------------- | ---------- | ------------------ |
+| 1     | 17.0 / 18.0                | 13.0 / 15.3     | 103 / 99   | 100% / 100%        |
+| 2     | 15.4 / 15.6                | 10.1 / 11.0     | 201 / 198  | 100% / 100%        |
+| 3     | 14.0 / 14.4                | 6.2 / 6.9       | 303 / 299  | 100% / 100%        |
+| 4     | 13.2 / 13.7                | 3.6 / 4.6       | 399 / 399  | 100% / 100%        |
+| 5     | 13.0 / 13.2                | 2.0 / 2.2       | 499 / 500  | 100% / 100%        |
+| 6     | 12.7 / 13.0                | 0.8 / 1.2       | 590 / 596  | 90% / 93%          |
+| 7     | 12.3 / 12.6                | 0.8 / 0.5       | 697 / 696  | 80% / 80%          |
+
+Reasoning-built puzzles use slightly fewer clues and leave fewer redundant ones (clues that could
+be dropped without losing uniqueness), at the same scores and the same generation cost (measured
+back to back: level 1 1809 ms vs 1832 ms, level 5 2265 ms vs 2564 ms per puzzle).
+
+What did _not_ change: the distance the solving front travels between consecutive deduction steps
+is the same for both (≈2.0 cells), so there is no evidence that solving flows more locally. The
+honest claim is that every clue is placed where reasoning stalls, not that the puzzle plays
+differently.
+
+The search budget for uniqueness checks while digging is 20,000 nodes: puzzles inside level 7 need
+a few hundred, so the budget only rejects puzzles far harder than any level.
 
 ## Known limitations of "unbiased"
 
