@@ -28,7 +28,9 @@ import type { PuzzleSource } from '../worker/client';
 import { canUndo, commit, startHistory, undo, type History } from '../game/history';
 import { byId } from './dom';
 import { applyDrop, attachDragController, type DragControllerOptions } from './dragDrop';
+import { renderHelp } from './help';
 import { mountLayout } from './layout';
+import { Modal } from './modal';
 import { NotesMenu } from './notesMenu';
 import { renderBoard, renderSpawnerNotes, renderSpawners } from './render';
 
@@ -67,6 +69,7 @@ export class App {
   private puzzleCode = '';
   private difficulty: DifficultyLevel = DEFAULT_DIFFICULTY;
   private readonly notesMenu: NotesMenu;
+  private readonly helpModal: Modal;
   private readonly detachDrag: () => void;
   private readonly el: Record<string, HTMLElement>;
 
@@ -93,9 +96,16 @@ export class App {
       'share-btn',
       'win-modal',
       'close-win-modal-btn',
+      'help-btn',
+      'help-modal',
+      'help-body',
+      'close-help-btn',
+      'start-tutorial-btn',
     ];
     this.el = Object.fromEntries(ids.map((id) => [id, byId(root, id)]));
     this.notesMenu = new NotesMenu(root.ownerDocument);
+    renderHelp(this.el['help-body']!);
+    this.helpModal = new Modal(this.el['help-modal']!);
 
     this.detachDrag = attachDragController({
       root,
@@ -120,6 +130,8 @@ export class App {
     this.on('check-btn', 'click', () => this.check());
     this.on('checkpoint-btn', 'click', () => this.update(saveCheckpoint));
     this.on('restore-btn', 'click', () => this.update(restoreCheckpoint));
+    this.on('help-btn', 'click', () => this.helpModal.open());
+    this.on('close-help-btn', 'click', () => this.helpModal.close());
     this.on('share-btn', 'click', () => void this.share());
     this.on('close-win-modal-btn', 'click', () => {
       this.el['win-modal']!.hidden = true;
@@ -164,6 +176,7 @@ export class App {
   destroy(): void {
     this.detachDrag();
     this.notesMenu.close();
+    this.helpModal.close();
     this.options.root.removeEventListener('click', this.onNoteClick);
     this.options.root.ownerDocument.removeEventListener('keydown', this.onKeyDown);
   }
@@ -237,6 +250,7 @@ export class App {
   }
 
   private readonly onKeyDown = (event: KeyboardEvent) => {
+    if (this.helpModal.isOpen) return;
     if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === 'z') {
       const target = event.target as HTMLElement | null;
       if (target?.closest?.('input, textarea, select')) return;

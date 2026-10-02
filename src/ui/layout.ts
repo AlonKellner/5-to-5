@@ -20,6 +20,7 @@ export function mountLayout(root: HTMLElement): void {
         <button id="reset-btn" class="btn btn-yellow">Reset</button>
         <button id="clue-btn" class="btn btn-cyan">Clue</button>
         <button id="reveal-btn" class="btn btn-indigo">Solve</button>
+        <button id="help-btn" class="btn btn-gray">Help</button>
       </div>
 
       <div id="status" class="status" aria-live="polite"></div>
@@ -52,6 +53,24 @@ export function mountLayout(root: HTMLElement): void {
         </footer>
       </div>
     </main>
+
+    <div
+      id="help-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="help-title"
+      hidden
+    >
+      <div class="modal-card modal-card-help" tabindex="-1">
+        <h2 id="help-title">How to play</h2>
+        <div id="help-body" class="help-body"></div>
+        <div class="modal-actions">
+          <button id="start-tutorial-btn" class="btn btn-green">Show me around</button>
+          <button id="close-help-btn" class="btn btn-gray">Close</button>
+        </div>
+      </div>
+    </div>
 
     <div id="win-modal" class="modal" role="dialog" aria-modal="true" hidden>
       <div class="modal-card">

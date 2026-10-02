@@ -375,6 +375,43 @@ describe('App', () => {
     });
   });
 
+  describe('help', () => {
+    it('opens from the toolbar and explains the rules', () => {
+      expect($('#help-modal').hidden).toBe(true);
+      $('#help-btn').click();
+      expect($('#help-modal').hidden).toBe(false);
+      expect($('#help-body').textContent).toMatch(/always/i);
+      expect($('#help-body').textContent).toMatch(/never/i);
+    });
+
+    it('closes with the button, the scrim and Escape', () => {
+      $('#help-btn').click();
+      $('#close-help-btn').click();
+      expect($('#help-modal').hidden).toBe(true);
+
+      $('#help-btn').click();
+      $('#help-modal').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      expect($('#help-modal').hidden).toBe(true);
+
+      $('#help-btn').click();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      expect($('#help-modal').hidden).toBe(true);
+    });
+
+    it('does not undo while the help is open', () => {
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      $('#help-btn').click();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', metaKey: true }));
+      expect(cell(0).classList.contains('color-0')).toBe(true);
+    });
+
+    it('closes when the app is destroyed', () => {
+      $('#help-btn').click();
+      app.destroy();
+      expect($('#help-modal').hidden).toBe(true);
+    });
+  });
+
   describe('undo', () => {
     const undoButton = () => $<HTMLButtonElement>('#undo-btn');
 

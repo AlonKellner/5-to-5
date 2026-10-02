@@ -19,7 +19,8 @@
   --radius: 0.5rem;
   --panel-pad: 0.5rem;
   --area-gap: 0.75rem;
-  /* Fallback for badges rendered outside .play-area, which defines the real value. */
+  /* Fallbacks for components rendered outside .play-area, which defines the real values. */
+  --cell: 3rem;
   --clue-size: 24px;
   color-scheme: dark;
 }
@@ -666,6 +667,67 @@ body {
   border: 1px solid #22c55e;
   border-radius: 1rem;
   box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+}
+
+.modal-card-help {
+  border-color: var(--gray-600);
+  max-width: 34rem;
+  max-height: 85svh;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.help-body {
+  color: #d1d5db;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.help-section + .help-section {
+  margin-top: 1.25rem;
+}
+
+.help-section h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: white;
+}
+
+.help-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.help-list li + li {
+  margin-top: 0.35rem;
+}
+
+.help-legend,
+.help-cycle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0;
+  align-items: center;
+}
+
+.help-legend-row,
+.help-cycle-step,
+.help-vertical-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.help-vertical-note {
+  margin-top: 0.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
 }
 
 .modal-card h2 {
