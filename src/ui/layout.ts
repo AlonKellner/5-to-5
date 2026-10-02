@@ -1,4 +1,5 @@
 import { DIFFICULTY_LEVELS, DIFFICULTY_NAMES } from '../core/puzzle';
+import { applyButtonIcons } from './icons';
 
 /** Static page skeleton; everything inside the ids is rendered from state. */
 export function mountLayout(root: HTMLElement): void {
@@ -64,4 +65,5 @@ export function mountLayout(root: HTMLElement): void {
       </div>
     </div>
   `;
+  applyButtonIcons(root);
 }

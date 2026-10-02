@@ -126,6 +126,37 @@ describe('App', () => {
     });
   });
 
+  describe('icon buttons', () => {
+    const ICON_BUTTONS = [
+      'new-btn',
+      'reset-btn',
+      'clue-btn',
+      'reveal-btn',
+      'undo-btn',
+      'check-btn',
+      'checkpoint-btn',
+      'restore-btn',
+      'share-btn',
+    ];
+
+    it('shows every toolbar button as an icon with an accessible name', () => {
+      for (const id of ICON_BUTTONS) {
+        const button = $(`#${id}`);
+        expect(button.querySelectorAll('svg.btn-icon'), id).toHaveLength(1);
+        expect(button.textContent!.trim(), id).toBe('');
+        expect(button.getAttribute('aria-label')?.length, id).toBeGreaterThan(0);
+        expect(button.getAttribute('title')?.length, id).toBeGreaterThan(0);
+      }
+    });
+
+    it('keeps the difficulty levels readable as text', () => {
+      const options = $$('#difficulty-select option');
+      expect(options).toHaveLength(7);
+      expect(options[0]!.textContent).toContain('Beginner');
+      expect(options[6]!.textContent).toContain('Master');
+    });
+  });
+
   describe('moving tiles', () => {
     it('drags a tile from a spawner onto an empty cell', () => {
       drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
