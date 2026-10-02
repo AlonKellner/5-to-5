@@ -117,6 +117,24 @@ describe('App', () => {
       );
     });
 
+    it('places the cycle arrows with classes, so rotating needs no re-render', () => {
+      const arrows = $$('#spawner-clues-container .relation-slot');
+      expect(arrows).toHaveLength(6);
+      arrows.forEach((arrow, index) => {
+        expect(arrow.classList.contains(`arrow-${index}`), `arrow ${index}`).toBe(true);
+        expect(arrow.getAttribute('style'), `arrow ${index}`).toBeNull();
+      });
+      expect(arrows[0]!.classList.contains('edge-start')).toBe(true);
+      expect(arrows[5]!.classList.contains('edge-end')).toBe(true);
+    });
+
+    it('uses the same grid markup in both orientations', () => {
+      expect($('#spawner-grid').className).toBe('grid5');
+      expect($('#spawner-notes-grid').className).toBe('grid5');
+      expect($('#spawner-clues-container').className).toBe('overlay grid5');
+      expect($('#relationship-clues-container').className).toBe('overlay grid5');
+    });
+
     it('shows the difficulty and loads the puzzle into the URL', () => {
       expect($('#puzzle-info').textContent).toContain('Medium (3/7)');
       expect(source.calls).toEqual([{ seed: 'fresh-seed', difficulty: 3 }]);

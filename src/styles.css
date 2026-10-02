@@ -15,15 +15,13 @@
   --shadow-2: #86efac;
   --shadow-3: #fde047;
   --shadow-4: #d8b4fe;
-  --gap: 4px;
+  --gap: clamp(3px, 1vmin, 8px);
   --radius: 0.5rem;
+  --panel-pad: 0.5rem;
+  --area-gap: 0.75rem;
+  /* Fallback for badges rendered outside .play-area, which defines the real value. */
+  --clue-size: 24px;
   color-scheme: dark;
-}
-
-@media (min-width: 640px) {
-  :root {
-    --gap: 8px;
-  }
 }
 
 *,
@@ -38,7 +36,7 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: 100svh;
   padding: 0.5rem;
   background: var(--gray-900);
   color: white;
@@ -50,47 +48,109 @@ body {
   user-select: none;
 }
 
-@media (min-width: 640px) {
-  body {
-    padding: 1rem;
-  }
+/* The app root must take its width from the body; an inline-size container inside it cannot
+   give it one, which would otherwise collapse the whole page to zero width. */
+#app {
+  width: 100%;
 }
 
 .container {
   width: 100%;
-  max-width: 28rem;
-  margin: 0 auto;
+  /* Container queries measure the content box, so the cell maths never counts a scrollbar.
+     An inline-size container ignores its contents when sizing itself, so it must be stretched
+     by the flex parent rather than shrink-to-fit. */
+  align-self: stretch;
+  container-type: inline-size;
 }
 
-@media (min-width: 640px) {
-  .container {
-    max-width: 36rem;
-  }
+.header,
+.toolbar,
+.status,
+.footer {
+  max-width: 36rem;
+  margin-inline: auto;
 }
 
+/*
+ * One DOM for both orientations. Every grid is sized from --cell, so board cells, color bins and
+ * note cells are always exactly the same size; the orientation only changes where the areas sit
+ * and how many cells fit across and down.
+ */
 .play-area {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  gap: var(--area-gap);
+  justify-content: center;
+  justify-items: center;
+  align-items: start;
+  --cell: clamp(
+    2rem,
+    min(
+      calc((100cqw - var(--extra-x) - var(--gaps-x) * var(--gap)) / var(--cells-x)),
+      calc((100svh - var(--extra-y) - var(--gaps-y) * var(--gap)) / var(--cells-y))
+    ),
+    5rem
+  );
+  --clue-size: clamp(14px, calc(var(--cell) * 0.45), 26px);
 }
 
-/* On wide screens the tray sits beside the board, so both fit on screen while dragging. */
-@media (min-width: 900px) {
-  .container {
-    max-width: 64rem;
-  }
+@media (orientation: portrait) {
   .play-area {
-    flex-direction: row;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 1.5rem;
+    grid-template-areas: 'board' 'controls' 'bins' 'notes' 'footer';
+    --cells-x: 5;
+    --gaps-x: 4;
+    --cells-y: 8;
+    --gaps-y: 5;
+    --extra-x: calc(2 * var(--panel-pad) + 1rem);
+    --extra-y: 24rem;
   }
-  .board-column {
-    flex: 0 0 clamp(20rem, calc(100vh - 14rem), 36rem);
+}
+
+@media (orientation: landscape) {
+  .play-area {
+    grid-template-areas: 'board bins notes' 'controls bins notes' 'footer footer footer';
+    --cells-x: 8;
+    --gaps-x: 6;
+    --cells-y: 5;
+    --gaps-y: 4;
+    --extra-x: calc(6 * var(--panel-pad) + 2 * var(--area-gap) + 1rem);
+    --extra-y: 12rem;
   }
-  .tray-column {
-    flex: 1 1 0;
-    max-width: 26rem;
+  /* Landscape screens are short, so the furniture above the board shrinks. */
+  .subtitle {
+    display: none;
   }
+  .header {
+    margin-bottom: 0.5rem;
+  }
+  .header h1 {
+    font-size: 1.25rem;
+  }
+  .toolbar {
+    margin-bottom: 0.5rem;
+  }
+  .status:empty {
+    display: none;
+  }
+  .footer {
+    margin-bottom: 0;
+  }
+}
+
+#board-panel {
+  grid-area: board;
+}
+#bottom-controls {
+  grid-area: controls;
+  margin-bottom: 0;
+}
+#tray-panel {
+  grid-area: bins;
+}
+#notes-panel {
+  grid-area: notes;
+}
+.footer {
+  grid-area: footer;
 }
 
 .header {
@@ -225,51 +285,67 @@ body {
 
 .panel {
   position: relative;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
+  padding: var(--panel-pad);
   background: var(--gray-800);
   border-radius: 0.75rem;
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
 }
 
-@media (min-width: 640px) {
-  .panel {
-    padding: 0.75rem;
-  }
-}
-
 .grid5 {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--gap);
+  grid-template-columns: repeat(5, var(--cell));
+  grid-auto-rows: var(--cell);
 }
 
 /* The overlay shares the grid geometry of the grid below it, so clue badges placed on grid lines
    sit exactly on the gaps without any layout measurements. */
 .overlay {
   position: absolute;
-  inset: 0.5rem;
+  inset: var(--panel-pad);
   pointer-events: none;
 }
 
-.overlay.rows5 {
-  grid-template-rows: repeat(5, minmax(0, 1fr));
+#game-board,
+#relationship-clues-container {
+  grid-template-columns: repeat(5, var(--cell));
+  grid-template-rows: repeat(5, var(--cell));
 }
 
-.overlay.rows1 {
-  grid-template-rows: minmax(0, 1fr);
+@media (orientation: portrait) {
+  #spawner-grid,
+  #spawner-clues-container {
+    grid-template-columns: repeat(5, var(--cell));
+    grid-template-rows: var(--cell);
+  }
+  #spawner-notes-grid {
+    grid-template-columns: repeat(5, var(--cell));
+    grid-template-rows: repeat(2, var(--cell));
+    grid-auto-flow: row;
+  }
 }
 
-@media (min-width: 640px) {
-  .overlay {
-    inset: 0.75rem;
+@media (orientation: landscape) {
+  #spawner-grid,
+  #spawner-clues-container {
+    grid-template-columns: var(--cell);
+    grid-template-rows: repeat(5, var(--cell));
+  }
+  /* Notes are rendered slot-major, so flowing down the columns puts one color per row, lined up
+     with its bin in the strip to the left. */
+  #spawner-notes-grid {
+    grid-template-columns: repeat(2, var(--cell));
+    grid-template-rows: repeat(5, var(--cell));
+    grid-auto-flow: column;
   }
 }
 
 .grid-cell,
-.piece {
-  width: 100%;
-  aspect-ratio: 1 / 1;
+.piece,
+.spawner,
+.spawner-empty {
+  width: var(--cell);
+  height: var(--cell);
   border-radius: var(--radius);
   display: flex;
   justify-content: center;
@@ -356,17 +432,12 @@ body {
 }
 
 .spawner {
-  position: relative;
-  border-radius: var(--radius);
   transition:
     background-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 
 .spawner-empty {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: var(--radius);
   border: 2px dashed;
 }
 
@@ -375,11 +446,11 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 1.75rem;
+  font-size: calc(var(--cell) * 0.45);
   font-weight: 700;
   color: white;
   background-color: rgb(0 0 0 / 0.5);
-  padding: 2px 10px;
+  padding: 0 0.35em;
   border-radius: 9999px;
   z-index: 2;
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
@@ -394,8 +465,8 @@ body {
 
 .relationship-clue {
   z-index: 10;
-  width: 24px;
-  height: 24px;
+  width: var(--clue-size);
+  height: var(--clue-size);
   background-color: white;
   color: var(--gray-800);
   border-radius: 50%;
@@ -403,29 +474,85 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 16px;
+  font-size: calc(var(--clue-size) * 0.68);
   line-height: 1;
   box-shadow: 0 2px 4px rgb(0 0 0 / 0.2);
+  transform: rotate(var(--clue-rotate, 0deg));
 }
 
-.relation-slot.vertical .relationship-clue {
-  transform: rotate(90deg);
+.relation-slot.vertical {
+  --clue-rotate: 90deg;
 }
 
-.relation-slot.edge-start {
-  justify-content: flex-start;
+/* Cycle arrows: the first and last sit half outside the panel, marking "before" and "after".
+   Offsets are margins rather than transforms so they compose with the landscape rotation. */
+@media (orientation: portrait) {
+  .arrow-0 {
+    grid-area: 1 / 1;
+    justify-content: flex-start;
+  }
+  .arrow-1 {
+    grid-row: 1;
+    grid-column: 1 / span 2;
+  }
+  .arrow-2 {
+    grid-row: 1;
+    grid-column: 2 / span 2;
+  }
+  .arrow-3 {
+    grid-row: 1;
+    grid-column: 3 / span 2;
+  }
+  .arrow-4 {
+    grid-row: 1;
+    grid-column: 4 / span 2;
+  }
+  .arrow-5 {
+    grid-area: 1 / 5;
+    justify-content: flex-end;
+  }
+  .edge-start .relationship-clue {
+    margin-left: calc(-1 * (var(--clue-size) / 2 + var(--gap) / 2));
+  }
+  .edge-end .relationship-clue {
+    margin-right: calc(-1 * (var(--clue-size) / 2 + var(--gap) / 2));
+  }
 }
 
-.relation-slot.edge-start .relationship-clue {
-  transform: translateX(calc(-50% - var(--gap) / 2));
-}
-
-.relation-slot.edge-end {
-  justify-content: flex-end;
-}
-
-.relation-slot.edge-end .relationship-clue {
-  transform: translateX(calc(50% + var(--gap) / 2));
+@media (orientation: landscape) {
+  .spawner-arrow {
+    --clue-rotate: 90deg;
+  }
+  .arrow-0 {
+    grid-area: 1 / 1;
+    align-items: flex-start;
+  }
+  .arrow-1 {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .arrow-2 {
+    grid-column: 1;
+    grid-row: 2 / span 2;
+  }
+  .arrow-3 {
+    grid-column: 1;
+    grid-row: 3 / span 2;
+  }
+  .arrow-4 {
+    grid-column: 1;
+    grid-row: 4 / span 2;
+  }
+  .arrow-5 {
+    grid-area: 5 / 1;
+    align-items: flex-end;
+  }
+  .edge-start .relationship-clue {
+    margin-top: calc(-1 * (var(--clue-size) / 2 + var(--gap) / 2));
+  }
+  .edge-end .relationship-clue {
+    margin-bottom: calc(-1 * (var(--clue-size) / 2 + var(--gap) / 2));
+  }
 }
 
 .note-cell {
@@ -436,7 +563,7 @@ body {
 
 .note-placeholder {
   color: var(--gray-400);
-  font-size: 0.75rem;
+  font-size: clamp(0.5rem, calc(var(--cell) * 0.2), 0.75rem);
 }
 
 .note-container {
@@ -452,16 +579,9 @@ body {
 }
 
 .note-dot {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: clamp(6px, calc(var(--cell) * 0.22), 1rem);
+  height: clamp(6px, calc(var(--cell) * 0.22), 1rem);
   border-radius: 9999px;
-}
-
-@media (min-width: 640px) {
-  .note-dot {
-    width: 1rem;
-    height: 1rem;
-  }
 }
 
 .note-separator {

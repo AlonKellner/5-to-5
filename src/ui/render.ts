@@ -22,6 +22,17 @@ function relationBadge(symbol: string, placement: Record<string, string>, classN
   ]);
 }
 
+/**
+ * Cycle arrows around the color bins. Their place in the grid comes from CSS classes, not inline
+ * styles, so the same DOM works for the horizontal row (portrait) and the vertical strip
+ * (landscape) without re-rendering.
+ */
+function spawnerArrow(index: number, edge: '' | 'edge-start' | 'edge-end') {
+  return el('div', { className: `relation-slot spawner-arrow arrow-${index} ${edge}`.trim() }, [
+    el('div', { className: 'relationship-clue', text: '›' }),
+  ]);
+}
+
 export function renderBoard(
   board: HTMLElement,
   overlay: HTMLElement,
@@ -107,11 +118,9 @@ export function renderSpawners(grid: HTMLElement, overlay: HTMLElement, state: G
   }
   grid.replaceChildren(...spawners);
 
-  const arrows = [relationBadge('›', { 'grid-row': '1', 'grid-column': '1' }, 'edge-start')];
-  for (let color = 0; color < COLOR_COUNT - 1; color++) {
-    arrows.push(relationBadge('›', { 'grid-row': '1', 'grid-column': `${color + 1} / span 2` }));
-  }
-  arrows.push(relationBadge('›', { 'grid-row': '1', 'grid-column': `${COLOR_COUNT}` }, 'edge-end'));
+  const arrows = [spawnerArrow(0, 'edge-start')];
+  for (let index = 1; index < COLOR_COUNT; index++) arrows.push(spawnerArrow(index, ''));
+  arrows.push(spawnerArrow(COLOR_COUNT, 'edge-end'));
   overlay.replaceChildren(...arrows);
 }
 
