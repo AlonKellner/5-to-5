@@ -7,6 +7,7 @@ import type { DifficultyLevel, Puzzle } from '../core/puzzle';
 import { Rng } from '../core/rng';
 import type { PuzzleSource } from '../worker/client';
 import { App, STORAGE_KEY, TUTORIAL_MAX_ATTEMPTS } from './app';
+import { COLOR_SHAPES } from './shapes';
 import { TUTORIAL_SEEN_KEY } from './tutorialSteps';
 
 const solution = legacyPuzzle().solution;
@@ -40,6 +41,11 @@ const $ = <T extends Element = HTMLElement>(selector: string) =>
   document.querySelector<T>(selector)!;
 const $$ = (selector: string) => [...document.querySelectorAll<HTMLElement>(selector)];
 const cell = (i: number) => $(`#game-board > [data-cell="${i}"]`);
+/** The color of an element with a color-N class, and the shape drawn on it. */
+const colorAndShape = (node: Element) => [
+  Number(/color-(\d)/.exec(node.className)![1]),
+  node.querySelector<SVGElement>(':scope > .color-shape')?.dataset['shape'],
+];
 const spawnerCount = (color: number) =>
   Number($(`#spawner-grid [data-color="${color}"] .spawner-count`).textContent);
 
@@ -112,6 +118,27 @@ describe('App', () => {
       expect(clue.querySelector('.lock-icon')).not.toBeNull();
       expect(clue.dataset['drag']).toBeUndefined();
       expect(cell(0).classList.contains('drop-zone')).toBe(true);
+    });
+
+    it('draws its color’s shape on every tile, on the board and in the bins', () => {
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      const tiles = $$('.piece');
+      expect(tiles.length).toBeGreaterThan(5);
+      for (const tile of tiles) {
+        const [color, shape] = colorAndShape(tile);
+        expect(shape, tile.className).toBe(COLOR_SHAPES[color as number]);
+      }
+      expect(cell(1).querySelector('.lock-icon')).not.toBeNull();
+    });
+
+    it('keeps the shape in a bin that has run out of tiles', () => {
+      for (let i = 0; i < 3; i++) {
+        const empty = $$('#game-board > .drop-zone')[0]!;
+        drag($('#spawner-grid [data-drag="tray"][data-color="2"]'), empty);
+      }
+      expect(spawnerCount(2)).toBe(0);
+      const bin = $('#spawner-grid [data-color="2"] .spawner-empty');
+      expect(bin.querySelector<SVGElement>('.color-shape')!.dataset['shape']).toBe('triangle');
     });
 
     it('renders relation clues on the grid lines between their cells', () => {
@@ -240,6 +267,7 @@ describe('App', () => {
       ($$('.note-option')[2] as HTMLElement).click();
       expect(cell(0).querySelectorAll('.note-dot')).toHaveLength(1);
       expect(cell(0).querySelector('.note-dot')!.classList.contains('color-2')).toBe(true);
+      expect(colorAndShape(cell(0).querySelector('.note-dot')!)).toEqual([2, 'triangle']);
       pointer('pointerdown', $('h1'));
       expect($$('.note-menu')).toHaveLength(0);
     });

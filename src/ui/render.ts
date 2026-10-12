@@ -2,6 +2,7 @@ import { EDGES, RELATION_SYMBOLS, slotOfEdge, clueAt, EDGE_COUNT } from '../core
 import { CELL_COUNT, COLOR_COUNT, colOf, rowOf } from '../core/constants';
 import { SPAWNER_NOTE_SLOTS, trayCount, type GameState } from '../game/state';
 import { el, lockIcon } from './dom';
+import { colorShape } from './shapes';
 
 function noteDots(mask: number): HTMLElement | null {
   if (!mask) return null;
@@ -10,7 +11,7 @@ function noteDots(mask: number): HTMLElement | null {
   for (let color = 0; color < COLOR_COUNT; color++) {
     if (!(mask & (1 << color))) continue;
     if (!first) container.appendChild(el('span', { className: 'note-separator', text: '/' }));
-    container.appendChild(el('div', { className: `note-dot color-${color}` }));
+    container.appendChild(el('div', { className: `note-dot color-${color}` }, [colorShape(color)]));
     first = false;
   }
   return container;
@@ -45,7 +46,9 @@ export function renderBoard(
     const saved = state.checkpoint && !state.locked[cell] ? state.checkpoint.cells[cell]! : -1;
     let node: HTMLElement;
     if (color >= 0) {
-      node = el('div', { className: `piece color-${color}`, dataset: { cell, drop: 'cell' } });
+      node = el('div', { className: `piece color-${color}`, dataset: { cell, drop: 'cell' } }, [
+        colorShape(color),
+      ]);
       if (state.locked[cell]) {
         node.classList.add('clue-piece');
         node.appendChild(lockIcon());
@@ -101,14 +104,14 @@ export function renderSpawners(grid: HTMLElement, overlay: HTMLElement, state: G
     const count = trayCount(state, color);
     const piece =
       count > 0
-        ? el('div', {
-            className: `piece color-${color} draggable-piece`,
-            dataset: { drag: 'tray', color },
-          })
-        : el('div', {
-            className: 'spawner-empty',
-            style: { 'border-color': `var(--color-${color})` },
-          });
+        ? el(
+            'div',
+            { className: `piece color-${color} draggable-piece`, dataset: { drag: 'tray', color } },
+            [colorShape(color)],
+          )
+        : el('div', { className: 'spawner-empty', style: { color: `var(--color-${color})` } }, [
+            colorShape(color),
+          ]);
     spawners.push(
       el('div', { className: 'spawner', dataset: { drop: 'tray', color } }, [
         piece,

@@ -1,5 +1,6 @@
 import { COLOR_COUNT, COLOR_NAMES } from '../core/constants';
 import { el } from './dom';
+import { colorShape } from './shapes';
 
 export function clampMenuPosition(
   x: number,
@@ -36,11 +37,15 @@ export class NotesMenu {
     this.close();
     const menu = el('div', { className: 'note-menu', attrs: { role: 'menu' } });
     for (let color = 0; color < COLOR_COUNT; color++) {
-      const option = el('button', {
-        className: `note-option color-${color}${selected & (1 << color) ? ' selected' : ''}`,
-        dataset: { color },
-        attrs: { 'aria-label': COLOR_NAMES[color]!, role: 'menuitemcheckbox' },
-      });
+      const option = el(
+        'button',
+        {
+          className: `note-option color-${color}${selected & (1 << color) ? ' selected' : ''}`,
+          dataset: { color },
+          attrs: { 'aria-label': COLOR_NAMES[color]!, role: 'menuitemcheckbox' },
+        },
+        [colorShape(color)],
+      );
       option.addEventListener('click', (event) => {
         event.stopPropagation();
         const mask = onToggle(color);

@@ -72,7 +72,13 @@ test('takes notes, reveals a clue and solves', async ({ page }) => {
   const empty = page.locator('#game-board > .drop-zone').first();
   await empty.click();
   await page.locator('.note-option').nth(3).click();
+  await page.locator('.note-option').nth(1).click();
   await expect(empty.locator('.note-dot.color-3')).toHaveCount(1);
+  await expect(empty.locator('.note-dot.color-3 .color-shape')).toHaveAttribute(
+    'data-shape',
+    'diamond',
+  );
+  await page.screenshot({ path: `test-results/screenshots/${test.info().project.name}-notes.png` });
   await page.locator('h1').click();
   await expect(page.locator('.note-menu')).toHaveCount(0);
 

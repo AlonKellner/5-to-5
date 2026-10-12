@@ -47,7 +47,7 @@ function strokeIcon(...shapes: Shape[]): SVGSVGElement {
 export interface ButtonIcon {
   icon: () => SVGSVGElement;
   label: string;
-  /** What the button does, shown on a long press and in the help dialog's button guide. */
+  /** What the button does, for the help dialog's button guide. */
   description: string;
   /** Tooltip, when it should say more than the label. */
   title?: string;
@@ -154,7 +154,6 @@ export function applyButtonIcons(root: ParentNode): void {
     // Our tooltip shows instantly on hover and focus; a native title would add a second, slow one.
     button.removeAttribute('title');
     button.dataset['tooltip'] = entry.title ?? entry.label;
-    button.dataset['tooltipDetail'] = entry.description;
     if (entry.tooltipPosition) button.dataset['tooltipPosition'] = entry.tooltipPosition;
     else delete button.dataset['tooltipPosition'];
   }

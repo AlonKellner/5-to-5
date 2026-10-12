@@ -157,3 +157,38 @@ test.describe('landscape layout', () => {
     expect(centerY(arrows[5]!)).toBeGreaterThan(centerY(spawners[4]!));
   });
 });
+
+const PHONES = [
+  ['iPhone SE', { width: 375, height: 667 }],
+  ['iPhone 13 browser', { width: 390, height: 664 }],
+  ['small Android', { width: 360, height: 740 }],
+  ['large phone', { width: 414, height: 896 }],
+] as const;
+
+for (const [name, viewport] of PHONES) {
+  test.describe(`a ${name} in portrait`, () => {
+    test.use({ viewport });
+
+    test.beforeEach(async ({ page }) => {
+      await suppressTutorial(page);
+      await page.goto('./?d=1');
+      await waitForPuzzle(page);
+    });
+
+    test('uses the screen without scrolling', async ({ page }) => {
+      const toolbar = await box(page.locator('#top-controls'));
+      const board = await box(page.locator('#board-panel'));
+      const footer = await box(page.locator('.footer'));
+      const scroll = await page.evaluate(
+        () => document.documentElement.scrollHeight - document.documentElement.clientHeight,
+      );
+      // Only a one-line status row separates the toolbar from the board.
+      expect(board.y - (toolbar.y + toolbar.height)).toBeLessThanOrEqual(32);
+      expect(scroll).toBeLessThanOrEqual(1);
+      // The board grows until it meets either the sides or the bottom of the screen.
+      const fillsWidth = board.width >= 0.85 * viewport.width;
+      const fillsHeight = footer.y + footer.height >= viewport.height - 48;
+      expect(fillsWidth || fillsHeight).toBe(true);
+    });
+  });
+}

@@ -49,18 +49,21 @@ body {
   user-select: none;
 }
 
-/* The app root must take its width from the body; an inline-size container inside it cannot
-   give it one, which would otherwise collapse the whole page to zero width. */
+/* The app root and the container stretch to the whole window: containers ignore their contents
+   when sizing themselves, so they must be sized by their flex parents rather than shrink-to-fit,
+   which would otherwise collapse the page. */
 #app {
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .container {
   width: 100%;
-  /* Container queries measure the content box, so the cell maths never counts a scrollbar.
-     An inline-size container ignores its contents when sizing itself, so it must be stretched
-     by the flex parent rather than shrink-to-fit. */
-  align-self: stretch;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   container-type: inline-size;
 }
 
@@ -76,9 +79,17 @@ body {
  * One DOM for both orientations. Every grid is sized from --cell, so board cells, color bins and
  * note cells are always exactly the same size; the orientation only changes where the areas sit
  * and how many cells fit across and down.
+ *
+ * The play area takes whatever height the header and the top toolbar leave, and is a size
+ * container, so cells are measured against the space really left — however the toolbar wraps.
+ * --extra-x/--extra-y only count what sits inside the play area besides the cells.
  */
 .play-area {
+  flex: 1 1 0;
+  min-height: 0;
+  container-type: size;
   display: grid;
+  align-content: start;
   gap: var(--area-gap);
   justify-content: center;
   justify-items: center;
@@ -87,7 +98,7 @@ body {
     2rem,
     min(
       calc((100cqw - var(--extra-x) - var(--gaps-x) * var(--gap)) / var(--cells-x)),
-      calc((100svh - var(--extra-y) - var(--gaps-y) * var(--gap)) / var(--cells-y))
+      calc((100cqh - var(--extra-y) - var(--gaps-y) * var(--gap)) / var(--cells-y))
     ),
     5rem
   );
@@ -101,8 +112,9 @@ body {
     --gaps-x: 4;
     --cells-y: 8;
     --gaps-y: 5;
-    --extra-x: calc(2 * var(--panel-pad) + 1rem);
-    --extra-y: 24rem;
+    --extra-x: calc(2 * var(--panel-pad));
+    /* three panels' padding, four area gaps, the bottom toolbar and the footer */
+    --extra-y: calc(6 * var(--panel-pad) + 4 * var(--area-gap) + 5rem);
   }
 }
 
@@ -113,13 +125,11 @@ body {
     --gaps-x: 6;
     --cells-y: 5;
     --gaps-y: 4;
-    --extra-x: calc(6 * var(--panel-pad) + 2 * var(--area-gap) + 1rem);
-    --extra-y: 12rem;
+    --extra-x: calc(6 * var(--panel-pad) + 2 * var(--area-gap));
+    /* the board panel's padding, two area gaps, the bottom toolbar and the footer */
+    --extra-y: calc(2 * var(--panel-pad) + 2 * var(--area-gap) + 5rem);
   }
   /* Landscape screens are short, so the furniture above the board shrinks. */
-  .subtitle {
-    display: none;
-  }
   .header {
     margin-bottom: 0.5rem;
   }
@@ -156,7 +166,7 @@ body {
 
 .header {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .header h1 {
@@ -166,18 +176,12 @@ body {
   letter-spacing: -0.025em;
 }
 
-.subtitle {
-  margin: 0.5rem 0 0;
-  color: var(--gray-400);
-  font-size: clamp(0.8rem, 2.2vmin, 1rem);
-}
-
 .toolbar {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.25rem;
 }
 
 .btn-icon {
@@ -188,25 +192,6 @@ body {
 
 /* One floating tooltip for icon buttons, positioned by src/ui/tooltip.ts. It is fixed to the
    window, so it never widens the page. */
-.tooltip-detailed {
-  max-width: min(18rem, calc(100vw - 12px));
-  padding: 0.55rem 0.7rem;
-  white-space: normal;
-  font-size: 0.8rem;
-  line-height: 1.35;
-  border: 1px solid var(--gray-600);
-}
-
-.tooltip-title {
-  margin-bottom: 0.2rem;
-  font-weight: 700;
-}
-
-.tooltip-detail {
-  color: #d1d5db;
-  font-weight: 400;
-}
-
 .tooltip {
   position: fixed;
   z-index: 90;
@@ -335,9 +320,12 @@ body {
   background: var(--gray-700);
 }
 
+/* One short line between the toolbar and the board, kept even when empty so messages never push
+   the board down. */
 .status {
-  min-height: 1.5rem;
-  margin-bottom: 0.5rem;
+  min-height: 1.25rem;
+  line-height: 1.25rem;
+  margin-bottom: 0.25rem;
   text-align: center;
   color: var(--gray-400);
   font-size: 0.875rem;
@@ -508,13 +496,47 @@ body {
   transform: translate(-50%, -50%);
   font-size: calc(var(--cell) * 0.45);
   font-weight: 700;
+  line-height: 1;
   color: white;
-  background-color: rgb(0 0 0 / 0.5);
-  padding: 0 0.35em;
-  border-radius: 9999px;
   z-index: 2;
-  text-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+  text-shadow:
+    0 0 2px rgb(0 0 0 / 0.6),
+    0 1px 3px rgb(0 0 0 / 0.5);
   pointer-events: none;
+}
+
+/* Every color carries its own darkened shape, so tiles, bins and notes can be told apart without
+   seeing color (src/ui/shapes.ts). */
+.color-shape {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 72%;
+  height: 72%;
+  fill: rgb(0 0 0 / 0.3);
+  pointer-events: none;
+}
+
+/* An empty bin has no colored tile, so its shape is drawn faintly in the bin's color instead. */
+.spawner-empty .color-shape {
+  fill: currentColor;
+  opacity: 0.35;
+}
+
+.note-dot,
+.note-option {
+  position: relative;
+}
+
+.note-dot .color-shape {
+  width: 78%;
+  height: 78%;
+  fill: rgb(0 0 0 / 0.4);
+}
+
+.note-option .color-shape {
+  width: 55%;
+  height: 55%;
 }
 
 .relation-slot {
@@ -639,8 +661,8 @@ body {
 }
 
 .note-dot {
-  width: clamp(6px, calc(var(--cell) * 0.22), 1rem);
-  height: clamp(6px, calc(var(--cell) * 0.22), 1rem);
+  width: clamp(8px, calc(var(--cell) * 0.26), 1.1rem);
+  height: clamp(8px, calc(var(--cell) * 0.26), 1.1rem);
   border-radius: 9999px;
 }
 
@@ -703,7 +725,6 @@ body {
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
   color: var(--gray-400);
   font-size: 0.875rem;
 }
@@ -840,6 +861,11 @@ body {
   gap: 0.5rem 1rem;
   margin: 0.5rem 0;
   align-items: center;
+}
+
+.help-cycle .note-dot {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .help-legend-row,

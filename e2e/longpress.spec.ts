@@ -19,13 +19,12 @@ test.beforeEach(async ({ page }) => {
   await waitForPuzzle(page);
 });
 
-test('explains a button on a long press instead of pressing it', async ({ page }, info) => {
+test('names a button on a long press instead of pressing it', async ({ page }, info) => {
   const before = await lockedTiles(page);
   await syntheticLongPress(page, page.locator('#reveal-btn'));
-  const tip = page.locator('.tooltip-detailed');
+  const tip = page.locator('.tooltip');
   await expect(tip).toBeVisible();
-  await expect(tip.locator('.tooltip-title')).toHaveText('Show the solution');
-  await expect(tip.locator('.tooltip-detail')).toContainText('ends the game');
+  await expect(tip).toHaveText('Show the solution');
   await page.screenshot({ path: `test-results/screenshots/${info.project.name}-longpress.png` });
 
   expect(await lockedTiles(page)).toBe(before);
@@ -41,16 +40,16 @@ test('explains a button on a long press instead of pressing it', async ({ page }
   await expect(tip).toBeHidden();
 });
 
-test('explains a disabled button, whose touches fall through to the toolbar', async ({ page }) => {
+test('names a disabled button, whose touches fall through to the toolbar', async ({ page }) => {
   await expect(page.locator('#undo-btn')).toBeDisabled();
   await syntheticLongPress(page, page.locator('#undo-btn'), page.locator('#bottom-controls'));
-  await expect(page.locator('.tooltip-detailed .tooltip-title')).toHaveText('Undo');
+  await expect(page.locator('.tooltip')).toHaveText('Undo (Ctrl+Z / ⌘Z)');
 });
 
 test.describe('a real finger on a touch screen', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 414, height: 896 } });
 
-  test('holding shows the explanation and the lifted finger does not press', async ({
+  test('holding shows the tooltip and the lifted finger does not press', async ({
     page,
     browserName,
   }) => {
@@ -66,7 +65,7 @@ test.describe('a real finger on a touch screen', () => {
 
     await touch('touchStart');
     await page.waitForTimeout(800);
-    await expect(page.locator('.tooltip-detailed .tooltip-title')).toHaveText('Reveal a clue');
+    await expect(page.locator('.tooltip')).toHaveText('Reveal a clue');
     await touch('touchEnd');
     await page.waitForTimeout(300);
     expect(await lockedTiles(page)).toBe(before);

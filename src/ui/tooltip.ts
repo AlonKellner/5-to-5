@@ -33,15 +33,16 @@ interface Press {
  * Explains every element under `root` that has a data-tooltip attribute. One floating element is
  * positioned inside the window, so it never widens the page or spills off screen.
  *
- * - Mouse hover and keyboard focus show the short name (data-tooltip).
- * - On touch screens, which have no hover, pressing and holding shows the name and a longer
- *   explanation (data-tooltip-detail); the tap that ends the hold is swallowed, so learning what
- *   a button does never triggers it.
+ * - Mouse hover and keyboard focus show the name (data-tooltip).
+ * - On touch screens, which have no hover, pressing and holding shows the same name and keeps it
+ *   until the next touch; the tap that ends the hold is swallowed, so learning what a button does
+ *   never triggers it.
  */
 export class Tooltips {
   private tip: HTMLElement | null = null;
   private current: HTMLElement | null = null;
-  private detailed = false;
+  /** Shown by a long press: it outlives the finger and waits for the next touch. */
+  private pinned = false;
   private press: Press | null = null;
   private swallowClick = false;
   /** Focus that follows a press came from the pointer, not the keyboard. */
@@ -83,29 +84,15 @@ export class Tooltips {
     this.current = null;
   }
 
-  private show(target: HTMLElement, detailed: boolean): void {
+  private show(target: HTMLElement, pinned: boolean): void {
     const tip = this.ensureTip();
-    const name = target.dataset['tooltip'] ?? '';
-    const detail = detailed ? target.dataset['tooltipDetail'] : undefined;
     this.current = target;
-    this.detailed = detail !== undefined;
-    tip.classList.toggle('tooltip-detailed', this.detailed);
-    if (detail !== undefined) {
-      const title = this.doc.createElement('div');
-      title.className = 'tooltip-title';
-      // The plain name: hover tooltips may add keyboard shortcuts, which mean nothing on touch.
-      title.textContent = target.getAttribute('aria-label') ?? name;
-      const body = this.doc.createElement('div');
-      body.className = 'tooltip-detail';
-      body.textContent = detail;
-      tip.replaceChildren(title, body);
-    } else {
-      tip.textContent = name;
-    }
+    this.pinned = pinned;
+    tip.textContent = target.dataset['tooltip'] ?? '';
     tip.hidden = false;
     const view = this.doc.defaultView;
-    // A finger covers the button and the space under it, so explanations open upwards.
-    const prefer = detailed || target.dataset['tooltipPosition'] === 'above' ? 'above' : undefined;
+    // A finger covers the button and the space under it, so long-press tooltips open upwards.
+    const prefer = pinned || target.dataset['tooltipPosition'] === 'above' ? 'above' : undefined;
     const { left, top } = placeTooltip(
       target.getBoundingClientRect(),
       tip.getBoundingClientRect(),
@@ -119,7 +106,7 @@ export class Tooltips {
   private hide(): void {
     if (this.tip) this.tip.hidden = true;
     this.current = null;
-    this.detailed = false;
+    this.pinned = false;
   }
 
   private ensureTip(): HTMLElement {
@@ -156,9 +143,9 @@ export class Tooltips {
   }
 
   private readonly onAnyPointerDown = () => {
-    // A new touch anywhere dismisses an explanation and ends any pending click swallowing.
+    // A new touch anywhere dismisses a long-press tooltip and ends any pending click swallowing.
     this.swallowClick = false;
-    if (this.detailed) this.hide();
+    if (this.pinned) this.hide();
   };
 
   private readonly onPointerDown = (event: Event) => {
@@ -169,7 +156,7 @@ export class Tooltips {
     if (pointer.pointerType !== 'touch' && pointer.pointerType !== 'pen') return;
     const target =
       this.tooltipTarget(event) ?? this.disabledTargetAt(pointer.clientX, pointer.clientY);
-    if (!target?.dataset['tooltipDetail']) return;
+    if (!target) return;
     this.press = {
       target,
       x: pointer.clientX,
@@ -214,14 +201,14 @@ export class Tooltips {
   };
 
   private readonly onPointerOver = (event: Event) => {
-    if ((event as PointerEvent).pointerType === 'touch' || this.detailed) return;
+    if ((event as PointerEvent).pointerType === 'touch' || this.pinned) return;
     const target = this.tooltipTarget(event);
     if (target) this.show(target, false);
     else this.hide();
   };
 
   private readonly onPointerOut = (event: Event) => {
-    if (this.detailed) return;
+    if (this.pinned) return;
     const next = (event as PointerEvent).relatedTarget as Node | null;
     if (this.current && next && this.current.contains(next)) return;
     this.hide();
@@ -238,6 +225,6 @@ export class Tooltips {
   };
 
   private readonly onFocusOut = () => {
-    if (!this.detailed) this.hide();
+    if (!this.pinned) this.hide();
   };
 }

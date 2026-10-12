@@ -5,6 +5,7 @@ import { COLOR_NAMES } from '../core/constants';
 import { DIFFICULTY_LEVELS, DIFFICULTY_NAMES } from '../core/puzzle';
 import { renderHelp } from './help';
 import { BUTTON_ICONS } from './icons';
+import { COLOR_SHAPES } from './shapes';
 import { HIDDEN_RULES } from './rulesText';
 
 let container: HTMLElement;
@@ -64,6 +65,16 @@ describe('renderHelp', () => {
     const dots = [...container.querySelectorAll('.help-cycle .note-dot')];
     expect(dots.map((d) => d.className)).toEqual([0, 1, 2, 3, 4].map((c) => `note-dot color-${c}`));
     for (const name of COLOR_NAMES) expect(text()).toContain(name);
+  });
+
+  it('names the shape of every color, for players who cannot tell the colors apart', () => {
+    const shapes = [
+      ...container.querySelectorAll<SVGElement>('.help-cycle .note-dot .color-shape'),
+    ];
+    expect(shapes.map((shape) => shape.dataset['shape'])).toEqual([...COLOR_SHAPES]);
+    COLOR_NAMES.forEach((name, color) => {
+      expect(text()).toContain(`${name.toLowerCase()} ${COLOR_SHAPES[color]}`);
+    });
   });
 
   it('lists all seven difficulty levels and what the score means', () => {

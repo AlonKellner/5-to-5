@@ -64,12 +64,6 @@ describe('applyButtonIcons', () => {
     expect(button.hasAttribute('title')).toBe(false);
   });
 
-  it('attaches the longer explanation for long presses', () => {
-    applyButtonIcons(document.body);
-    const reveal = document.getElementById('reveal-btn')!;
-    expect(reveal.dataset['tooltipDetail']).toBe(BUTTON_ICONS['reveal-btn']!.description);
-  });
-
   it('keeps the keyboard shortcut in the tooltip of Undo', () => {
     applyButtonIcons(document.body);
     const undo = document.getElementById('undo-btn')!;

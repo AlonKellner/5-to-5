@@ -35,6 +35,18 @@ describe('NotesMenu', () => {
     expect(menu.isOpen).toBe(true);
   });
 
+  it('draws each color’s shape on its option', () => {
+    menu.open({ x: 10, y: 10 }, 0, () => 0);
+    const shapes = [...document.querySelectorAll<SVGElement>('.note-option .color-shape')];
+    expect(shapes.map((shape) => shape.dataset['shape'])).toEqual([
+      'circle',
+      'square',
+      'triangle',
+      'diamond',
+      'pentagon',
+    ]);
+  });
+
   it('toggles an option and reflects the new selection', () => {
     const onToggle = vi.fn(() => 0b00011);
     menu.open({ x: 10, y: 10 }, 0b00001, onToggle);

@@ -4,6 +4,7 @@ import { DIFFICULTY_LEVELS, DIFFICULTY_NAMES } from '../core/puzzle';
 import { el } from './dom';
 import { BUTTON_ICONS } from './icons';
 import { HIDDEN_RULES } from './rulesText';
+import { COLOR_SHAPES, colorShape } from './shapes';
 
 const RELATION_MEANINGS = [
   'the same color',
@@ -47,11 +48,14 @@ export function renderHelp(container: HTMLElement): void {
   const cycle = el('div', { className: 'help-cycle' }, [
     ...Array.from({ length: COLOR_COUNT }, (_, color) =>
       el('span', { className: 'help-cycle-step' }, [
-        el('span', { className: `note-dot color-${color}` }),
+        el('span', { className: `note-dot color-${color}` }, [colorShape(color)]),
         el('span', { text: COLOR_NAMES[color]! }),
       ]),
     ),
   ]);
+
+  const named = COLOR_NAMES.map((name, color) => `${name.toLowerCase()} ${COLOR_SHAPES[color]}`);
+  const shapeNames = `${named.slice(0, -1).join(', ')} and ${named.at(-1)}`;
 
   const levels = el(
     'ul',
@@ -66,6 +70,7 @@ export function renderHelp(container: HTMLElement): void {
       'The goal',
       bullets([
         'Fill the board so it holds five tiles of each color.',
+        `Each color also has its own shape: ${shapeNames}.`,
         'Tiles touch when they share an edge: up, down, left or right — not diagonally.',
         'Every puzzle has exactly one solution, so you never have to guess blindly.',
       ]),
@@ -88,7 +93,7 @@ export function renderHelp(container: HTMLElement): void {
     section(
       'The buttons',
       el('p', {
-        text: 'Hover over a button with a mouse to see its name. On a touch screen, press and hold any button to learn what it does — it will not be pressed.',
+        text: 'Hover over a button with a mouse to see its name. On a touch screen, press and hold a button to see its name without pressing it.',
       }),
       el(
         'ul',

@@ -123,10 +123,8 @@ describe('long press on touch screens', () => {
     vi.useFakeTimers();
     document.body.innerHTML = `
       <div id="root">
-        <button id="reveal" data-tooltip="Show the solution"
-          data-tooltip-detail="Fills in the whole board and ends the game.">eye</button>
-        <button id="undo" aria-label="Undo" data-tooltip="Undo (Ctrl+Z)"
-          data-tooltip-detail="Takes back your last move." disabled>undo</button>
+        <button id="reveal" data-tooltip="Show the solution">eye</button>
+        <button id="undo" aria-label="Undo" data-tooltip="Undo (Ctrl+Z)" disabled>undo</button>
       </div>`;
     clicks = 0;
     document.getElementById('reveal')!.addEventListener('click', () => clicks++);
@@ -138,17 +136,13 @@ describe('long press on touch screens', () => {
     vi.useRealTimers();
   });
 
-  it('explains the button after a press and hold', () => {
+  it('names the button after a press and hold', () => {
     const reveal = document.getElementById('reveal')!;
     touch('pointerdown', reveal);
     expect(tip()?.hidden ?? true).toBe(true);
     vi.advanceTimersByTime(LONG_PRESS_MS);
     expect(tip()!.hidden).toBe(false);
-    expect(tip()!.classList.contains('tooltip-detailed')).toBe(true);
-    expect(tip()!.querySelector('.tooltip-title')!.textContent).toBe('Show the solution');
-    expect(tip()!.querySelector('.tooltip-detail')!.textContent).toBe(
-      'Fills in the whole board and ends the game.',
-    );
+    expect(tip()!.textContent).toBe('Show the solution');
   });
 
   it('does not press the button when the long press ends', () => {
@@ -190,11 +184,12 @@ describe('long press on touch screens', () => {
     expect(tip()?.hidden ?? true).toBe(true);
   });
 
-  it('closes the explanation on the next touch anywhere', () => {
+  it('keeps the tooltip after the finger lifts, until the next touch anywhere', () => {
     const reveal = document.getElementById('reveal')!;
     touch('pointerdown', reveal);
     vi.advanceTimersByTime(LONG_PRESS_MS);
     touch('pointerup', reveal);
+    expect(tip()!.hidden).toBe(false);
     touch('pointerdown', document.body);
     expect(tip()!.hidden).toBe(true);
   });
@@ -205,20 +200,23 @@ describe('long press on touch screens', () => {
     expect(event.defaultPrevented).toBe(true);
   });
 
-  it('explains disabled buttons too, which do not receive touches themselves', () => {
+  it('names disabled buttons too, which do not receive touches themselves', () => {
     const undo = document.getElementById('undo')!;
     undo.getBoundingClientRect = () =>
       ({ left: 100, top: 0, right: 140, bottom: 40, width: 40, height: 40 }) as DOMRect;
     touch('pointerdown', document.getElementById('root')!, 120, 20);
     vi.advanceTimersByTime(LONG_PRESS_MS);
-    expect(tip()!.querySelector('.tooltip-title')!.textContent).toBe('Undo');
+    expect(tip()!.textContent).toBe('Undo (Ctrl+Z)');
   });
 
-  it('keeps hover tooltips short', () => {
+  it('shows exactly what hovering shows', () => {
+    const reveal = document.getElementById('reveal')!;
     const event = new MouseEvent('pointerover', { bubbles: true });
     Object.defineProperty(event, 'pointerType', { value: 'mouse' });
-    document.getElementById('reveal')!.dispatchEvent(event);
-    expect(tip()!.classList.contains('tooltip-detailed')).toBe(false);
-    expect(tip()!.textContent).toBe('Show the solution');
+    reveal.dispatchEvent(event);
+    const hovered = tip()!.innerHTML;
+    touch('pointerdown', reveal);
+    vi.advanceTimersByTime(LONG_PRESS_MS);
+    expect(tip()!.innerHTML).toBe(hovered);
   });
 });

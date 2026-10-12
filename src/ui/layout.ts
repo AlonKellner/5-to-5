@@ -10,8 +10,6 @@ export function mountLayout(root: HTMLElement): void {
     <main class="container">
       <header class="header">
         <h1>5-to-5</h1>
-        <p class="subtitle">Place five tiles of each color. Every color must always touch one
-          color and never touches another — find out which.</p>
       </header>
 
       <div id="top-controls" class="toolbar">

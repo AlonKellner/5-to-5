@@ -14,6 +14,10 @@ hidden rules, and you have to work them out from the clues.
   is missing from all of them.
 - The rules are mutual: if red must touch blue, blue must touch red; the same holds for never.
 
+Every color also has its own shape — red circle, blue square, green triangle, yellow diamond,
+purple pentagon — drawn on its tiles, bins and notes, so the game can be played without telling
+colors apart.
+
 Clues are locked tiles and symbols between two neighboring cells, read left to right or top to
 bottom along the color cycle red › blue › green › yellow › purple › red:
 
