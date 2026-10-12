@@ -1,31 +1,17 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import {
+  cell,
+  center,
+  dragTo,
+  suppressTutorial,
+  trayCount,
+  trayTile,
+  waitForPuzzle,
+} from './helpers';
 
-const cell = (page: Page, i: number) => page.locator(`#game-board > [data-cell="${i}"]`);
-const trayTile = (page: Page, color: number) =>
-  page.locator(`#spawner-grid [data-drag="tray"][data-color="${color}"]`);
-const trayCount = async (page: Page, color: number) =>
-  Number(await page.locator(`#spawner-grid [data-color="${color}"] .spawner-count`).textContent());
-
-async function center(locator: Locator) {
-  const box = (await locator.boundingBox())!;
-  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-}
-
-async function dragTo(page: Page, from: Locator, to: Locator) {
-  await from.scrollIntoViewIfNeeded();
-  const start = await center(from);
-  const end = await center(to);
-  await page.mouse.move(start.x, start.y);
-  await page.mouse.down();
-  await page.mouse.move((start.x + end.x) / 2, (start.y + end.y) / 2, { steps: 5 });
-  await page.mouse.move(end.x, end.y, { steps: 5 });
-  await page.mouse.up();
-}
-
-async function waitForPuzzle(page: Page) {
-  await expect(page.locator('#game-board > *')).toHaveCount(25, { timeout: 60_000 });
-  await expect(page.locator('#status')).toHaveText('', { timeout: 60_000 });
-}
+test.beforeEach(async ({ page }) => {
+  await suppressTutorial(page);
+});
 
 test('generates a puzzle in a worker and records it in the URL', async ({ page }) => {
   await page.goto('./?d=1');

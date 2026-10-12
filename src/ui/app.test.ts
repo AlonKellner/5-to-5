@@ -6,7 +6,8 @@ import { encodePuzzle } from '../core/codec';
 import type { DifficultyLevel, Puzzle } from '../core/puzzle';
 import { Rng } from '../core/rng';
 import type { PuzzleSource } from '../worker/client';
-import { App, STORAGE_KEY } from './app';
+import { App, STORAGE_KEY, TUTORIAL_MAX_ATTEMPTS } from './app';
+import { TUTORIAL_SEEN_KEY } from './tutorialSteps';
 
 const solution = legacyPuzzle().solution;
 const rating = {
@@ -18,10 +19,21 @@ const rating = {
 class FakeSource implements PuzzleSource {
   calls: { seed: string; difficulty: DifficultyLevel }[] = [];
   next = legacyPuzzle();
+  /** Puzzles handed out before `next`, for testing what the app does with specific puzzles. */
+  queue: Puzzle[] = [];
   async generate(seed: string, difficulty: DifficultyLevel): Promise<Puzzle> {
     this.calls.push({ seed, difficulty });
-    return { ...this.next, seed, rating: { ...rating, level: difficulty } };
+    const puzzle = this.queue.shift() ?? this.next;
+    return { ...puzzle, seed, rating: { ...rating, level: difficulty } };
   }
+}
+
+/** The legacy puzzle with every vertical relation clue hidden, which the tutorial cannot show. */
+function puzzleWithoutVerticalClues(): Puzzle {
+  const puzzle = legacyPuzzle();
+  const mask = puzzle.mask.slice();
+  for (let edge = 20; edge < 40; edge++) mask[25 + edge] = 0;
+  return { ...puzzle, mask };
 }
 
 const $ = <T extends Element = HTMLElement>(selector: string) =>
@@ -78,6 +90,8 @@ describe('App', () => {
         this.set(key, value);
       },
     });
+    // Existing tests play with the tutorial already seen; its own block clears the flag.
+    storage.set(TUTORIAL_SEEN_KEY, '1');
     await startApp();
   });
 
@@ -504,6 +518,72 @@ describe('App', () => {
     it('is hidden once the puzzle is solved', () => {
       $('#reveal-btn').click();
       expect($('#check-btn').hidden).toBe(true);
+    });
+  });
+
+  describe('tutorial', () => {
+    const restart = async (url?: string) => {
+      app.destroy();
+      document.body.innerHTML = '<div id="app"></div>';
+      storage.delete(TUTORIAL_SEEN_KEY);
+      source.calls.length = 0;
+      await startApp(url);
+    };
+
+    it('runs the first time the game is opened and remembers that it did', async () => {
+      await restart();
+      await vi.waitFor(() => expect($$('.tutorial-bubble')).toHaveLength(1));
+      expect(storage.get(TUTORIAL_SEEN_KEY)).toBe('1');
+      expect($('.tutorial-title').textContent!.length).toBeGreaterThan(0);
+    });
+
+    it('does not run again afterwards', () => {
+      expect($$('.tutorial')).toHaveLength(0);
+    });
+
+    it('can be started from the help dialog, which it closes', async () => {
+      $('#help-btn').click();
+      $('#start-tutorial-btn').click();
+      await vi.waitFor(() => expect($$('.tutorial-bubble')).toHaveLength(1));
+      expect($('#help-modal').hidden).toBe(true);
+    });
+
+    it('generates another puzzle when this one cannot show every element', async () => {
+      source.queue = [puzzleWithoutVerticalClues()];
+      await restart();
+      await vi.waitFor(() => expect(source.calls.length).toBeGreaterThanOrEqual(2));
+      await vi.waitFor(() => expect($$('.tutorial-bubble')).toHaveLength(1));
+      expect($$('#relationship-clues-container .relation-slot.vertical').length).toBeGreaterThan(0);
+    });
+
+    it('gives up after a few tries and runs on what it has', async () => {
+      source.next = puzzleWithoutVerticalClues();
+      await restart();
+      await vi.waitFor(() => expect($$('.tutorial-bubble')).toHaveLength(1));
+      expect(source.calls).toHaveLength(1 + TUTORIAL_MAX_ATTEMPTS);
+      expect($('#status').textContent).toBe('');
+    });
+
+    it('keeps a shared puzzle exactly as it was', async () => {
+      await restart(`https://example.com/?p=${encodePuzzle(puzzleWithoutVerticalClues())}`);
+      await vi.waitFor(() => expect($$('.tutorial-bubble')).toHaveLength(1));
+      expect(source.calls).toHaveLength(0);
+    });
+
+    it('blocks play while it runs', async () => {
+      await restart();
+      await vi.waitFor(() => expect($$('.tutorial-bubble')).toHaveLength(1));
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      expect(cell(0).classList.contains('drop-zone')).toBe(true);
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', metaKey: true }));
+      expect($$('.tutorial-bubble')).toHaveLength(1);
+    });
+
+    it('stops when the app is destroyed', async () => {
+      await restart();
+      await vi.waitFor(() => expect($$('.tutorial-bubble')).toHaveLength(1));
+      app.destroy();
+      expect($$('.tutorial')).toHaveLength(0);
     });
   });
 });

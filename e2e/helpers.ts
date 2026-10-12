@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { TUTORIAL_SEEN_KEY } from '../src/ui/tutorialSteps';
 
 export const cell = (page: Page, i: number) => page.locator(`#game-board > [data-cell="${i}"]`);
 
@@ -41,4 +42,9 @@ export async function dragTo(page: Page, from: Locator, to: Locator): Promise<vo
 export async function waitForPuzzle(page: Page): Promise<void> {
   await expect(page.locator('#game-board > *')).toHaveCount(25, { timeout: 60_000 });
   await expect(page.locator('#status')).toHaveText('', { timeout: 60_000 });
+}
+
+/** Marks the guided tour as already seen, so it does not cover tests of the game itself. */
+export async function suppressTutorial(page: Page): Promise<void> {
+  await page.addInitScript((key) => window.localStorage.setItem(key, '1'), TUTORIAL_SEEN_KEY);
 }

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { box, cell, waitForPuzzle } from './helpers';
+import { box, cell, suppressTutorial, waitForPuzzle } from './helpers';
 
 const PORTRAIT = { width: 414, height: 896 };
 const LANDSCAPE = { width: 896, height: 414 };
@@ -25,6 +25,7 @@ for (const [name, viewport] of [
     test.use({ viewport });
 
     test.beforeEach(async ({ page }) => {
+      await suppressTutorial(page);
       await page.goto('./?d=1');
       await waitForPuzzle(page);
     });
@@ -77,6 +78,7 @@ test.describe('portrait layout', () => {
   test.use({ viewport: PORTRAIT });
 
   test.beforeEach(async ({ page }) => {
+    await suppressTutorial(page);
     await page.goto('./?d=1');
     await waitForPuzzle(page);
   });
@@ -103,6 +105,7 @@ test.describe('landscape layout', () => {
   test.use({ viewport: LANDSCAPE });
 
   test.beforeEach(async ({ page }) => {
+    await suppressTutorial(page);
     await page.goto('./?d=1');
     await waitForPuzzle(page);
   });

@@ -649,6 +649,78 @@ body {
   font-size: 0.875rem;
 }
 
+/* The guided tour sits above the modals and the notes menu. The spotlight is a single element
+   whose huge shadow dims everything around it, so there is no four-rectangle maths. */
+.tutorial {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.tutorial-blocker {
+  position: fixed;
+  inset: 0;
+}
+
+.tutorial-spotlight {
+  position: fixed;
+  border-radius: var(--radius);
+  box-shadow:
+    0 0 0 9999px rgb(0 0 0 / 0.72),
+    0 0 0 3px #4ade80;
+  transition:
+    left 0.2s ease,
+    top 0.2s ease,
+    width 0.2s ease,
+    height 0.2s ease;
+  pointer-events: none;
+}
+
+.tutorial-bubble {
+  position: fixed;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0.85rem 1rem;
+  background: var(--gray-800);
+  border: 1px solid var(--gray-600);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.5);
+}
+
+.tutorial-bubble h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.tutorial-body {
+  margin: 0;
+  color: #d1d5db;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.tutorial-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.tutorial-progress {
+  margin-right: auto;
+  color: var(--gray-400);
+  font-size: 0.8rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-spotlight,
+  .piece {
+    transition: none;
+  }
+  .piece.mistake {
+    animation: none;
+  }
+}
+
 .modal {
   position: fixed;
   inset: 0;

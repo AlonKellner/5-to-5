@@ -31,6 +31,8 @@ import { applyDrop, attachDragController, type DragControllerOptions } from './d
 import { renderHelp } from './help';
 import { mountLayout } from './layout';
 import { Modal } from './modal';
+import { Tutorial } from './tutorial';
+import { hasSeenTutorial, markTutorialSeen, puzzleSupportsTutorial } from './tutorialSteps';
 import { NotesMenu } from './notesMenu';
 import { renderBoard, renderSpawnerNotes, renderSpawners } from './render';
 
@@ -49,6 +51,9 @@ export interface AppOptions {
 }
 
 export const STORAGE_KEY = '5-to-5:game';
+
+/** Puzzles generated while looking for one that shows every part of the game. */
+export const TUTORIAL_MAX_ATTEMPTS = 5;
 
 const DEFAULT_DIFFICULTY: DifficultyLevel = 3;
 
@@ -70,6 +75,9 @@ export class App {
   private difficulty: DifficultyLevel = DEFAULT_DIFFICULTY;
   private readonly notesMenu: NotesMenu;
   private readonly helpModal: Modal;
+  private readonly tutorial: Tutorial;
+  /** Rises with every generation request, so an older one knows it has been superseded. */
+  private generation = 0;
   private readonly detachDrag: () => void;
   private readonly el: Record<string, HTMLElement>;
 
@@ -106,13 +114,17 @@ export class App {
     this.notesMenu = new NotesMenu(root.ownerDocument);
     renderHelp(this.el['help-body']!);
     this.helpModal = new Modal(this.el['help-modal']!);
+    this.tutorial = new Tutorial({ root, onFinish: () => this.setStatus('') });
 
     this.detachDrag = attachDragController({
       root,
       hitTest: options.hitTest,
-      onDrop: (source, target) => this.update((s) => applyDrop(s, source, target)),
+      onDrop: (source, target) => {
+        if (!this.tutorial.isRunning) this.update((s) => applyDrop(s, source, target));
+      },
       onClick: (source) => {
-        if (source.kind === 'cell') this.update((s) => returnToTray(s, source.cell));
+        if (this.tutorial.isRunning || source.kind !== 'cell') return;
+        this.update((s) => returnToTray(s, source.cell));
       },
     });
     root.addEventListener('click', this.onNoteClick);
@@ -131,6 +143,11 @@ export class App {
     this.on('checkpoint-btn', 'click', () => this.update(saveCheckpoint));
     this.on('restore-btn', 'click', () => this.update(restoreCheckpoint));
     this.on('help-btn', 'click', () => this.helpModal.open());
+    this.on(
+      'start-tutorial-btn',
+      'click',
+      () => void this.startTutorial({ allowRegenerate: true }),
+    );
     this.on('close-help-btn', 'click', () => this.helpModal.close());
     this.on('share-btn', 'click', () => void this.share());
     this.on('close-win-modal-btn', 'click', () => {
@@ -142,20 +159,69 @@ export class App {
     const params = this.options.url.searchParams;
     this.difficulty = parseDifficulty(params.get('d')) ?? this.difficulty;
     const code = params.get('p');
+    let fromLink = false;
     if (code) {
       try {
         const decoded = decodePuzzle(code);
         const rating = ratePuzzle(decoded.solution, decoded.mask);
         this.load({ ...decoded, rating });
-        return;
+        fromLink = true;
       } catch {
         this.setStatus('That puzzle link is invalid, generating a new puzzle.');
       }
     }
-    await this.newPuzzle(this.difficulty, params.get('seed') ?? undefined);
+    if (!fromLink) await this.newPuzzle(this.difficulty, params.get('seed') ?? undefined);
+    if (!hasSeenTutorial(this.options.storage)) {
+      // A shared link must stay the puzzle its sender meant, so it is never replaced.
+      await this.startTutorial({ allowRegenerate: !fromLink });
+    }
+  }
+
+  /**
+   * Runs the guided tour on the current puzzle, replacing it first when it cannot show every
+   * element the tour points at (for example when it has no vertical clue badge).
+   */
+  async startTutorial(options: { allowRegenerate: boolean }): Promise<void> {
+    if (!this.puzzle || this.tutorial.isRunning) return;
+    this.helpModal.close();
+    this.notesMenu.close();
+    markTutorialSeen(this.options.storage);
+    if (options.allowRegenerate && !puzzleSupportsTutorial(this.puzzle)) {
+      if (!(await this.findTutorialPuzzle())) return;
+    }
+    this.tutorial.start();
+  }
+
+  private async findTutorialPuzzle(): Promise<boolean> {
+    const token = ++this.generation;
+    const newButton = this.el['new-btn'] as HTMLButtonElement;
+    newButton.disabled = true;
+    try {
+      for (let attempt = 1; attempt <= TUTORIAL_MAX_ATTEMPTS; attempt++) {
+        this.setStatus('Looking for a puzzle that shows every part of the game…');
+        const candidate = await this.options.source.generate(
+          this.options.newSeed(),
+          this.difficulty,
+        );
+        if (token !== this.generation) return false;
+        if (puzzleSupportsTutorial(candidate) || attempt === TUTORIAL_MAX_ATTEMPTS) {
+          this.load(candidate);
+          this.setStatus('');
+          return true;
+        }
+      }
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!/cancel/i.test(message)) this.setStatus(`Could not generate a puzzle: ${message}`);
+      return false;
+    } finally {
+      newButton.disabled = false;
+    }
   }
 
   async newPuzzle(difficulty: DifficultyLevel, seed = this.options.newSeed()): Promise<void> {
+    const token = ++this.generation;
     this.difficulty = difficulty;
     this.setStatus(describeProgress(difficulty));
     (this.el['new-btn'] as HTMLButtonElement).disabled = true;
@@ -163,6 +229,7 @@ export class App {
       const puzzle = await this.options.source.generate(seed, difficulty, (progress) =>
         this.setStatus(describeProgress(difficulty, progress)),
       );
+      if (token !== this.generation) return;
       this.load(puzzle);
       this.setStatus('');
     } catch (error) {
@@ -177,6 +244,7 @@ export class App {
     this.detachDrag();
     this.notesMenu.close();
     this.helpModal.close();
+    this.tutorial.stop();
     this.options.root.removeEventListener('click', this.onNoteClick);
     this.options.root.ownerDocument.removeEventListener('keydown', this.onKeyDown);
   }
@@ -250,7 +318,7 @@ export class App {
   }
 
   private readonly onKeyDown = (event: KeyboardEvent) => {
-    if (this.helpModal.isOpen) return;
+    if (this.helpModal.isOpen || this.tutorial.isRunning) return;
     if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === 'z') {
       const target = event.target as HTMLElement | null;
       if (target?.closest?.('input, textarea, select')) return;
