@@ -16,13 +16,13 @@ function halfDots(colors: number, half: 'top' | 'bottom'): HTMLElement | null {
 }
 
 /** Top-half notes fill the top of the square and bottom-half notes the bottom, split by a line
- *  only when both halves are in use. */
+ *  as soon as either half is in use, so a lone half still reads as top or bottom. */
 function noteDots(mask: number): HTMLElement | null {
   const { top, bottom } = noteHalves(mask);
   if (!top && !bottom) return null;
   return el('div', { className: 'note-container' }, [
     halfDots(top, 'top'),
-    top && bottom ? el('div', { className: 'note-divider' }) : null,
+    el('div', { className: 'note-divider' }),
     halfDots(bottom, 'bottom'),
   ]);
 }

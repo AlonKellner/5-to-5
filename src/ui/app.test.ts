@@ -329,19 +329,24 @@ describe('App', () => {
         expect(dots(cell(0), 'bottom')).toEqual([3, 4]);
       });
 
-      it('draws a divider only when both halves have notes', () => {
+      it('draws a divider whenever either half has notes', () => {
+        const divider = () => cell(0).querySelector('.note-divider');
+        expect(divider()).toBeNull();
         cell(0).click();
         option(1).click();
-        expect(cell(0).querySelector('.note-divider')).toBeNull();
+        expect(divider()).not.toBeNull();
         expect(dots(cell(0), 'top')).toEqual([1]);
         switchHalf();
         option(2).click();
-        expect(cell(0).querySelector('.note-divider')).not.toBeNull();
+        expect(divider()).not.toBeNull();
         switchHalf();
         option(1).click();
-        expect(cell(0).querySelector('.note-divider')).toBeNull();
+        expect(divider()).not.toBeNull();
         expect(dots(cell(0), 'bottom')).toEqual([2]);
         expect(cell(0).querySelector('.note-half-top')).toBeNull();
+        switchHalf();
+        option(2).click();
+        expect(divider()).toBeNull();
       });
 
       it('works in the notes under the bins, and undo takes a bottom note back', () => {
