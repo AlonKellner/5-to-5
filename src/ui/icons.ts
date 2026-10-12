@@ -115,8 +115,8 @@ export const BUTTON_ICONS: Record<string, ButtonIcon> = {
   'restore-btn': {
     label: 'Restore the checkpoint',
     description: 'Puts the board and your notes back the way they were at the saved checkpoint.',
-    icon: () =>
-      strokeIcon(path('M5 21V4h14l-3 4 3 4H5'), path('M9 17a4 4 0 1 0-1.3-3'), path('M6 11v3h3')),
+    // The checkpoint flag with an arrow pointing back to it: return to the flag.
+    icon: () => strokeIcon(path('M4 21V3h9l-2 3 2 3H4'), path('M21 16H9'), path('M13 12l-4 4 4 4')),
   },
   'share-btn': {
     label: 'Copy a link to this puzzle',
