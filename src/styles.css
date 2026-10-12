@@ -188,6 +188,25 @@ body {
 
 /* One floating tooltip for icon buttons, positioned by src/ui/tooltip.ts. It is fixed to the
    window, so it never widens the page. */
+.tooltip-detailed {
+  max-width: min(18rem, calc(100vw - 12px));
+  padding: 0.55rem 0.7rem;
+  white-space: normal;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  border: 1px solid var(--gray-600);
+}
+
+.tooltip-title {
+  margin-bottom: 0.2rem;
+  font-weight: 700;
+}
+
+.tooltip-detail {
+  color: #d1d5db;
+  font-weight: 400;
+}
+
 .tooltip {
   position: fixed;
   z-index: 90;
@@ -228,7 +247,39 @@ body {
 
 .btn:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  /* Disabled buttons swallow touches in some browsers; letting them fall through to the toolbar
+     means a long press on them can still explain them (src/ui/tooltip.ts). */
+  pointer-events: none;
+}
+
+/* Long presses explain buttons, so the system's own long-press menu and selection stay away. */
+.btn {
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+.help-buttons {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.help-button-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.help-button-row + .help-button-row {
+  margin-top: 0.5rem;
+}
+
+.help-button-icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  padding: 0.3rem;
+  border-radius: var(--radius);
+  background: var(--gray-700);
 }
 
 .select {

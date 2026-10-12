@@ -47,6 +47,8 @@ function strokeIcon(...shapes: Shape[]): SVGSVGElement {
 export interface ButtonIcon {
   icon: () => SVGSVGElement;
   label: string;
+  /** What the button does, shown on a long press and in the help dialog's button guide. */
+  description: string;
   /** Tooltip, when it should say more than the label. */
   title?: string;
   /** Buttons near the bottom of the page open their tooltip upwards. */
@@ -57,6 +59,7 @@ export interface ButtonIcon {
 export const BUTTON_ICONS: Record<string, ButtonIcon> = {
   'new-btn': {
     label: 'New puzzle',
+    description: 'Generates a new puzzle at the difficulty chosen in the menu beside it.',
     icon: () =>
       strokeIcon(
         rect(3, 3, 18, 18, 3),
@@ -69,11 +72,14 @@ export const BUTTON_ICONS: Record<string, ButtonIcon> = {
   },
   'reset-btn': {
     label: 'Reset',
+    description:
+      'Takes the board back to its given clues, clearing your tiles and notes. Undo brings them back.',
     title: 'Reset to the clues',
     icon: () => strokeIcon(path('M3 12a9 9 0 1 0 3-6.7'), path('M3 4v5h5')),
   },
   'clue-btn': {
     label: 'Reveal a clue',
+    description: 'Places one correct tile for you and locks it — handy when you are stuck.',
     icon: () =>
       strokeIcon(
         path('M9 18h6'),
@@ -83,29 +89,38 @@ export const BUTTON_ICONS: Record<string, ButtonIcon> = {
   },
   'reveal-btn': {
     label: 'Show the solution',
+    description: 'Fills in the whole solution and ends the game.',
     icon: () =>
       strokeIcon(path('M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z'), circle(12, 12, 3)),
   },
   'undo-btn': {
     label: 'Undo',
+    description:
+      'Takes back your last change: a move, a note, a clue or a reset. Ctrl+Z or ⌘Z does the same.',
     title: 'Undo (Ctrl+Z / ⌘Z)',
     icon: () => strokeIcon(path('M9 14 4 9l5-5'), path('M4 9h10a6 6 0 0 1 0 12h-3')),
   },
   'check-btn': {
     label: 'Check for mistakes',
+    description:
+      'Outlines every tile you placed in the wrong cell, without saying which color belongs there.',
     icon: () => strokeIcon(circle(11, 11, 7), line(16, 16, 21, 21)),
   },
   'checkpoint-btn': {
     label: 'Save a checkpoint',
+    description:
+      'Remembers the board and your notes as they are now, so you can try an idea and come back.',
     icon: () => strokeIcon(path('M5 21V4h14l-3 4 3 4H5')),
   },
   'restore-btn': {
     label: 'Restore the checkpoint',
+    description: 'Puts the board and your notes back the way they were at the saved checkpoint.',
     icon: () =>
       strokeIcon(path('M5 21V4h14l-3 4 3 4H5'), path('M9 17a4 4 0 1 0-1.3-3'), path('M6 11v3h3')),
   },
   'share-btn': {
     label: 'Copy a link to this puzzle',
+    description: 'Copies a link to this exact puzzle, so someone else can play it.',
     tooltipPosition: 'above',
     icon: () =>
       strokeIcon(
@@ -115,6 +130,7 @@ export const BUTTON_ICONS: Record<string, ButtonIcon> = {
   },
   'help-btn': {
     label: 'Help',
+    description: 'Opens the rules, this guide to the buttons and the guided tour.',
     title: 'Rules and tutorial',
     icon: () =>
       strokeIcon(
@@ -138,6 +154,7 @@ export function applyButtonIcons(root: ParentNode): void {
     // Our tooltip shows instantly on hover and focus; a native title would add a second, slow one.
     button.removeAttribute('title');
     button.dataset['tooltip'] = entry.title ?? entry.label;
+    button.dataset['tooltipDetail'] = entry.description;
     if (entry.tooltipPosition) button.dataset['tooltipPosition'] = entry.tooltipPosition;
     else delete button.dataset['tooltipPosition'];
   }

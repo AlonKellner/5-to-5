@@ -16,6 +16,14 @@ test('opens the rules from the toolbar', async ({ page }) => {
   await expect(modal).toContainText('NEVER');
   await expect(modal.locator('.help-legend .relationship-clue')).toHaveCount(5);
   await page.screenshot({ path: `test-results/screenshots/${test.info().project.name}-help.png` });
+
+  const guide = modal.locator('.help-buttons');
+  await expect(guide.locator('.help-button-row')).toHaveCount(10);
+  await expect(modal).toContainText('press and hold');
+  await guide.scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: `test-results/screenshots/${test.info().project.name}-help-buttons.png`,
+  });
 });
 
 test('closes the rules with the button, the scrim and Escape', async ({ page }) => {

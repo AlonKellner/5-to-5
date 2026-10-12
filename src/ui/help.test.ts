@@ -4,6 +4,7 @@ import { RELATION_SYMBOLS } from '../core/clues';
 import { COLOR_NAMES } from '../core/constants';
 import { DIFFICULTY_LEVELS, DIFFICULTY_NAMES } from '../core/puzzle';
 import { renderHelp } from './help';
+import { BUTTON_ICONS } from './icons';
 import { HIDDEN_RULES } from './rulesText';
 
 let container: HTMLElement;
@@ -73,8 +74,20 @@ describe('renderHelp', () => {
     expect(text()).toMatch(/exactly one solution/i);
   });
 
-  it('leaves the controls to the tutorial', () => {
-    expect(text()).not.toMatch(/checkpoint/i);
+  it('lists every button with its icon, name and what it does', () => {
+    const rows = [...container.querySelectorAll('.help-buttons .help-button-row')];
+    expect(rows).toHaveLength(Object.keys(BUTTON_ICONS).length);
+    for (const entry of Object.values(BUTTON_ICONS)) {
+      const row = rows.find((r) => r.querySelector('strong')?.textContent === entry.label);
+      expect(row, entry.label).toBeDefined();
+      expect(row!.querySelector('svg.btn-icon'), entry.label).not.toBeNull();
+      expect(row!.textContent, entry.label).toContain(entry.description);
+    }
+  });
+
+  it('tells touch players to press and hold a button to learn about it', () => {
+    expect(text()).toMatch(/press and hold/i);
+    expect(text()).toMatch(/hover/i);
   });
 
   it('can be rendered again without stacking content', () => {

@@ -103,7 +103,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: 'top-controls',
     title: 'Puzzle controls',
-    body: 'Pick a difficulty and start a new puzzle, reset the board back to its clues, reveal one correct tile, or give up and show the solution.',
+    body: 'Pick a difficulty and start a new puzzle, reset the board back to its clues, reveal one correct tile, or give up and show the solution. Not sure what an icon means? Hover over it, or press and hold it on a touch screen.',
     target: '#top-controls',
   },
   {

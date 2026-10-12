@@ -2,6 +2,7 @@ import { RELATION_SYMBOLS } from '../core/clues';
 import { COLOR_COUNT, COLOR_NAMES } from '../core/constants';
 import { DIFFICULTY_LEVELS, DIFFICULTY_NAMES } from '../core/puzzle';
 import { el } from './dom';
+import { BUTTON_ICONS } from './icons';
 import { HIDDEN_RULES } from './rulesText';
 
 const RELATION_MEANINGS = [
@@ -83,6 +84,25 @@ export function renderHelp(container: HTMLElement): void {
           text: 'Badges between tiles in a column are read from top to bottom, so this one means the lower tile is the next color.',
         }),
       ]),
+    ),
+    section(
+      'The buttons',
+      el('p', {
+        text: 'Hover over a button with a mouse to see its name. On a touch screen, press and hold any button to learn what it does — it will not be pressed.',
+      }),
+      el(
+        'ul',
+        { className: 'help-buttons' },
+        Object.values(BUTTON_ICONS).map((entry) =>
+          el('li', { className: 'help-button-row' }, [
+            el('span', { className: 'help-button-icon' }, [entry.icon()]),
+            el('span', {}, [
+              el('strong', { text: entry.label }),
+              el('span', { text: ` — ${entry.description}` }),
+            ]),
+          ]),
+        ),
+      ),
     ),
     section(
       'Difficulty',

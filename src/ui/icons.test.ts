@@ -33,6 +33,13 @@ describe('BUTTON_ICONS', () => {
     }
   });
 
+  it('explains what every button does in a full sentence', () => {
+    for (const [id, entry] of Object.entries(BUTTON_ICONS)) {
+      expect(entry.description.length, id).toBeGreaterThan(20);
+      expect(entry.description, id).toMatch(/\.$/);
+    }
+  });
+
   it('gives every button a different icon', () => {
     const shapes = Object.values(BUTTON_ICONS).map((entry) => entry.icon().innerHTML);
     expect(new Set(shapes).size).toBe(shapes.length);
@@ -55,6 +62,12 @@ describe('applyButtonIcons', () => {
     expect(button.dataset['tooltip']).toBe('New puzzle');
     // A native title tooltip would show a second, slower tooltip on top of ours.
     expect(button.hasAttribute('title')).toBe(false);
+  });
+
+  it('attaches the longer explanation for long presses', () => {
+    applyButtonIcons(document.body);
+    const reveal = document.getElementById('reveal-btn')!;
+    expect(reveal.dataset['tooltipDetail']).toBe(BUTTON_ICONS['reveal-btn']!.description);
   });
 
   it('keeps the keyboard shortcut in the tooltip of Undo', () => {

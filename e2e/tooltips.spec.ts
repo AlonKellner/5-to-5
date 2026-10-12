@@ -36,7 +36,9 @@ for (const [name, viewport] of [
     await page.setViewportSize(viewport);
     const tooltip = page.locator('.tooltip');
     for (const id of ['new-btn', 'help-btn', 'undo-btn', 'checkpoint-btn', 'share-btn']) {
-      await page.locator(`#${id}`).hover();
+      // Undo starts disabled, and disabled buttons ignore pointer events, so Playwright's
+      // actionability check would wait forever; the app finds it by position instead.
+      await page.locator(`#${id}`).hover({ force: id === 'undo-btn' });
       await expect(tooltip, id).toBeVisible();
       const box = (await tooltip.boundingBox())!;
       expect(box.x, id).toBeGreaterThanOrEqual(0);
