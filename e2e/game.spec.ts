@@ -46,6 +46,29 @@ test('drags tiles between the tray and the board', async ({ page }) => {
   expect(await trayCount(page, color)).toBe(before);
 });
 
+test('returns a tapped tile to its bin without opening the notes menu', async ({ page }, info) => {
+  await page.goto('./?d=1');
+  await waitForPuzzle(page);
+  const empty = page.locator('#game-board > .drop-zone').last();
+  const index = Number(await empty.getAttribute('data-cell'));
+  const color = Number(
+    await page.locator('#spawner-grid [data-drag="tray"]').first().getAttribute('data-color'),
+  );
+  await dragTo(page, trayTile(page, color), cell(page, index));
+  await expect(cell(page, index)).toHaveClass(new RegExp(`color-${color}`));
+
+  const tile = cell(page, index);
+  if (info.project.name === 'mobile-webkit') await tile.tap();
+  else await tile.click();
+  await expect(cell(page, index)).toHaveClass(/drop-zone/);
+  await page.waitForTimeout(300);
+  await expect(page.locator('.note-menu')).toHaveCount(0);
+
+  // Pressing the empty cell again does open the menu.
+  await cell(page, index).click();
+  await expect(page.locator('.note-menu')).toHaveCount(1);
+});
+
 test('draws relation clues centered between their two cells', async ({ page }) => {
   await page.goto('./?d=1');
   await waitForPuzzle(page);

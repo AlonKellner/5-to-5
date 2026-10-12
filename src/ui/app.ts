@@ -80,6 +80,9 @@ export class App {
   private readonly tooltips: Tooltips;
   /** Rises with every generation request, so an older one knows it has been superseded. */
   private generation = 0;
+  /** A tap that returns a tile is followed by a click on the cell it left; that click must not
+   *  open the notes menu. Cleared by the next press, so a missed click cannot linger. */
+  private ignoreNoteClick = false;
   private readonly detachDrag: () => void;
   private readonly el: Record<string, HTMLElement>;
 
@@ -127,9 +130,11 @@ export class App {
       },
       onClick: (source) => {
         if (this.tutorial.isRunning || source.kind !== 'cell') return;
+        this.ignoreNoteClick = true;
         this.update((s) => returnToTray(s, source.cell));
       },
     });
+    root.addEventListener('pointerdown', this.onPress, true);
     root.addEventListener('click', this.onNoteClick);
     root.ownerDocument.addEventListener('keydown', this.onKeyDown);
 
@@ -249,6 +254,7 @@ export class App {
     this.helpModal.close();
     this.tutorial.stop();
     this.tooltips.destroy();
+    this.options.root.removeEventListener('pointerdown', this.onPress, true);
     this.options.root.removeEventListener('click', this.onNoteClick);
     this.options.root.ownerDocument.removeEventListener('keydown', this.onKeyDown);
   }
@@ -380,7 +386,15 @@ export class App {
     (this.el['undo-btn'] as HTMLButtonElement).disabled = !canUndo(this.history!);
   }
 
+  private readonly onPress = () => {
+    this.ignoreNoteClick = false;
+  };
+
   private readonly onNoteClick = (event: MouseEvent) => {
+    if (this.ignoreNoteClick) {
+      this.ignoreNoteClick = false;
+      return;
+    }
     const target = (event.target as Element).closest<HTMLElement>('[data-note]');
     if (!target || !this.state || this.tutorial.isRunning) return;
     const point = { x: event.clientX, y: event.clientY };

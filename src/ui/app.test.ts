@@ -253,6 +253,19 @@ describe('App', () => {
       expect(cell(0).classList.contains('drop-zone')).toBe(true);
     });
 
+    it('does not open the notes menu with the tap that returned a tile', () => {
+      drag($('#spawner-grid [data-drag="tray"][data-color="0"]'), cell(0));
+      pointer('pointerdown', cell(0));
+      pointer('pointerup', document);
+      // The browser's click lands on the cell the tile just left.
+      cell(0).click();
+      expect($$('.note-menu')).toHaveLength(0);
+      // The next tap on the now empty cell takes notes as usual.
+      pointer('pointerdown', cell(0));
+      cell(0).click();
+      expect($$('.note-menu')).toHaveLength(1);
+    });
+
     it('does not move clue tiles', () => {
       drag(cell(1), cell(0));
       expect(cell(1).classList.contains('color-4')).toBe(true);
