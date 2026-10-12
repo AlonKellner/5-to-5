@@ -655,7 +655,7 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   padding: 4px;
   pointer-events: none;
 }
@@ -664,12 +664,6 @@ body {
   width: clamp(8px, calc(var(--cell) * 0.26), 1.1rem);
   height: clamp(8px, calc(var(--cell) * 0.26), 1.1rem);
   border-radius: 9999px;
-}
-
-.note-separator {
-  color: var(--gray-400);
-  font-size: 0.875rem;
-  line-height: 1;
 }
 
 .note-menu {

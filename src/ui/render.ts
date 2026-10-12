@@ -7,12 +7,9 @@ import { colorShape } from './shapes';
 function noteDots(mask: number): HTMLElement | null {
   if (!mask) return null;
   const container = el('div', { className: 'note-container' });
-  let first = true;
   for (let color = 0; color < COLOR_COUNT; color++) {
     if (!(mask & (1 << color))) continue;
-    if (!first) container.appendChild(el('span', { className: 'note-separator', text: '/' }));
     container.appendChild(el('div', { className: `note-dot color-${color}` }, [colorShape(color)]));
-    first = false;
   }
   return container;
 }

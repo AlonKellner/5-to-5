@@ -285,7 +285,7 @@ describe('App', () => {
       ($$('.note-option')[4] as HTMLElement).click();
       const updated = $('#spawner-notes-grid [data-color="3"][data-slot="1"]');
       expect(updated.querySelectorAll('.note-dot')).toHaveLength(2);
-      expect(updated.textContent).toContain('/');
+      expect(updated.textContent).toBe('');
     });
   });
 
