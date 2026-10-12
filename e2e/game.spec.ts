@@ -144,11 +144,25 @@ test('keeps top and bottom notes in their own halves', async ({ page }, info) =>
   await waitForPuzzle(page);
   const square = page.locator('#game-board > .drop-zone').first();
   const option = (color: number) => page.locator('.note-option').nth(color);
-  await square.click();
-  // A full top half and a two-color bottom half: the most crowded halves look like.
+  const size = await box(square);
+  const menu = page.locator('.note-menu');
+  const shade = () => menu.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+  // Pressing the top half opens the top-half menu; a full top half is the most crowded one.
+  await square.click({ position: { x: size.width / 2, y: size.height / 4 } });
+  await expect(menu).toHaveAttribute('data-half', 'top');
+  const topShade = await shade();
   for (const color of [0, 1, 2, 3, 4]) await option(color).click();
-  await page.locator('.note-half-toggle').click();
+  await page.screenshot({
+    path: `test-results/screenshots/${info.project.name}-note-menu-top.png`,
+  });
+  await page.locator('h1').click();
+
+  // Pressing the bottom half opens the bottom-half menu, in a brighter shade.
+  await square.click({ position: { x: size.width / 2, y: (size.height * 3) / 4 } });
+  await expect(menu).toHaveAttribute('data-half', 'bottom');
   await expect(page.locator('.note-half-toggle')).toHaveAttribute('data-half', 'bottom');
+  await expect.poll(shade).not.toBe(topShade);
   for (const color of [1, 3]) await option(color).click();
   await page.screenshot({ path: `test-results/screenshots/${info.project.name}-note-halves.png` });
   await page.locator('h1').click();

@@ -296,6 +296,29 @@ describe('App', () => {
           Number(/color-(\d)/.exec(d.className)![1]),
         );
 
+      /** Clicks a note square in its top or bottom half (the square is 40px tall at y 100). */
+      const clickHalf = (node: HTMLElement, half: 'top' | 'bottom') => {
+        node.getBoundingClientRect = () =>
+          ({ left: 0, top: 100, right: 40, bottom: 140, width: 40, height: 40 }) as DOMRect;
+        const y = half === 'top' ? 110 : 130;
+        node.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 20, clientY: y }));
+      };
+
+      it('opens on the half of the square that was pressed', () => {
+        clickHalf(cell(0), 'bottom');
+        expect($('.note-menu').dataset['half']).toBe('bottom');
+        option(2).click();
+        expect(dots(cell(0), 'bottom')).toEqual([2]);
+        clickHalf(cell(0), 'top');
+        expect($('.note-menu').dataset['half']).toBe('top');
+        const bin = $('#spawner-notes-grid [data-color="1"][data-slot="0"]');
+        clickHalf(bin, 'bottom');
+        option(4).click();
+        expect(dots($('#spawner-notes-grid [data-color="1"][data-slot="0"]'), 'bottom')).toEqual([
+          4,
+        ]);
+      });
+
       it('puts top notes in the top half and bottom notes in the bottom half', () => {
         cell(0).click();
         option(1).click();

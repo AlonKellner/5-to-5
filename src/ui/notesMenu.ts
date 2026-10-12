@@ -56,15 +56,16 @@ export class NotesMenu {
 
   /**
    * `mask` holds both halves' colors (see noteHalves); `onToggle` receives a color and a half and
-   * returns the whole note mask after toggling it. The menu always starts on the top half.
+   * returns the whole note mask after toggling it. The menu starts on `startHalf`.
    */
   open(
     point: { x: number; y: number },
     mask: number,
     onToggle: (color: number, half: NoteHalf) => number,
+    startHalf: NoteHalf = 'top',
   ): void {
     this.close();
-    let half: NoteHalf = 'top';
+    let half = startHalf;
     let current = mask;
     const menu = el('div', { className: 'note-menu', attrs: { role: 'menu' } });
     const options = Array.from({ length: COLOR_COUNT }, (_, color) => {
@@ -100,6 +101,7 @@ export class NotesMenu {
         option.setAttribute('aria-checked', String(on));
       });
       toggle.dataset['half'] = half;
+      menu.dataset['half'] = half;
       const other = half === 'top' ? 'bottom' : 'top';
       toggle.setAttribute('aria-label', `Writing in the ${half} half; switch to the ${other} half`);
     };

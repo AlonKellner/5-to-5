@@ -118,11 +118,22 @@ describe('NotesMenu', () => {
       expect(selected()).toEqual([false, true, false, false, true]);
     });
 
-    it('starts on the top half every time the menu opens', () => {
+    it('starts on the top half unless asked for the bottom one', () => {
       menu.open({ x: 10, y: 10 }, mask, () => mask);
       toggle().click();
       menu.open({ x: 10, y: 10 }, mask, () => mask);
       expect(toggle().dataset['half']).toBe('top');
+      menu.open({ x: 10, y: 10 }, mask, () => mask, 'bottom');
+      expect(toggle().dataset['half']).toBe('bottom');
+      expect(selected()).toEqual([false, true, false, false, false]);
+    });
+
+    it('marks the whole menu with its half, which sets its background', () => {
+      menu.open({ x: 10, y: 10 }, mask, () => mask);
+      const panel = document.querySelector<HTMLElement>('.note-menu')!;
+      expect(panel.dataset['half']).toBe('top');
+      toggle().click();
+      expect(panel.dataset['half']).toBe('bottom');
     });
   });
 });

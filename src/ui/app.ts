@@ -384,20 +384,33 @@ export class App {
     const target = (event.target as Element).closest<HTMLElement>('[data-note]');
     if (!target || !this.state || this.tutorial.isRunning) return;
     const point = { x: event.clientX, y: event.clientY };
+    // The menu opens on the half of the square that was pressed.
+    const rect = target.getBoundingClientRect();
+    const half = event.clientY > rect.top + rect.height / 2 ? 'bottom' : 'top';
     if (target.dataset['note'] === 'cell') {
       const cell = Number(target.dataset['cell']);
-      this.notesMenu.open(point, this.state.gridNotes[cell]!, (color, half) => {
-        this.update((s) => toggleGridNote(s, cell, color, half));
-        return this.state!.gridNotes[cell]!;
-      });
+      this.notesMenu.open(
+        point,
+        this.state.gridNotes[cell]!,
+        (color, half) => {
+          this.update((s) => toggleGridNote(s, cell, color, half));
+          return this.state!.gridNotes[cell]!;
+        },
+        half,
+      );
     } else {
       const color = Number(target.dataset['color']);
       const slot = Number(target.dataset['slot']);
       const index = color * SPAWNER_NOTE_SLOTS + slot;
-      this.notesMenu.open(point, this.state.spawnerNotes[index]!, (noteColor, half) => {
-        this.update((s) => toggleSpawnerNote(s, color, slot, noteColor, half));
-        return this.state!.spawnerNotes[index]!;
-      });
+      this.notesMenu.open(
+        point,
+        this.state.spawnerNotes[index]!,
+        (noteColor, half) => {
+          this.update((s) => toggleSpawnerNote(s, color, slot, noteColor, half));
+          return this.state!.spawnerNotes[index]!;
+        },
+        half,
+      );
     }
   };
 
