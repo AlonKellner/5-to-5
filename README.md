@@ -25,7 +25,9 @@ bottom along the color cycle red › blue › green › yellow › purple › re
 | `«`    | two steps back (three forward) |
 | `‹`    | previous color in the cycle    |
 
-Every generated puzzle has exactly one solution.
+Every generated puzzle has exactly one solution. The **?** button opens the full rules, and the
+tour it offers walks through every part of the screen — it also runs by itself the first time you
+open the game on a device.
 
 ## Development
 
@@ -70,6 +72,15 @@ Open the folder and accept the recommended extensions (ESLint, Prettier, Vitest)
 - `?p=<code>` opens an exact puzzle; the app keeps the current puzzle in the address bar, so copying
   the URL shares it.
 
+The game remembers two things in `localStorage`: `5-to-5:game` (the puzzle in progress) and
+`5-to-5:tutorial-seen` (so the tour only runs itself once). Clear them to see a first visit again.
+
+### Layout
+
+One DOM serves both orientations, switched by CSS alone: portrait puts the color bins and notes
+below the board, landscape stacks the bins as a strip beside it. Every grid is sized from a single
+`--cell` custom property, so bin and note cells always match board cells.
+
 ## How it works
 
 ```
@@ -85,6 +96,9 @@ src/
     generator/     board sampling, clue selection, difficulty rating
   game/state.ts    immutable game state: moves, notes, checkpoints, hints, win detection
   ui/              rendering and interaction (pointer events for mouse and touch)
+    icons.ts       inline SVG icons for the toolbar buttons
+    help.ts        the rules dialog, built from the engine's own constants
+    tutorial*.ts   the guided tour: steps, the features a puzzle must show, the overlay
   worker/          runs the generator in a Web Worker
 scripts/           CLI, benchmark and experiments
 e2e/               Playwright tests
