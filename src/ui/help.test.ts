@@ -4,6 +4,7 @@ import { RELATION_SYMBOLS } from '../core/clues';
 import { COLOR_NAMES } from '../core/constants';
 import { DIFFICULTY_LEVELS, DIFFICULTY_NAMES } from '../core/puzzle';
 import { renderHelp } from './help';
+import { HIDDEN_RULES } from './rulesText';
 
 let container: HTMLElement;
 const text = () => container.textContent!;
@@ -33,6 +34,10 @@ describe('renderHelp', () => {
     ]) {
       expect(text(), String(phrase)).toMatch(phrase);
     }
+  });
+
+  it('lists every hidden rule from the text the tutorial uses', () => {
+    for (const rule of Object.values(HIDDEN_RULES)) expect(text()).toContain(rule);
   });
 
   it('explains each relation symbol', () => {

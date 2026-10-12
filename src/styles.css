@@ -186,6 +186,23 @@ body {
   display: block;
 }
 
+/* One floating tooltip for icon buttons, positioned by src/ui/tooltip.ts. It is fixed to the
+   window, so it never widens the page. */
+.tooltip {
+  position: fixed;
+  z-index: 90;
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.375rem;
+  background: var(--gray-700);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgb(0 0 0 / 0.35);
+  pointer-events: none;
+}
+
 .toolbar .btn {
   min-width: 2.5rem;
   min-height: 2.5rem;

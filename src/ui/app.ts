@@ -31,6 +31,7 @@ import { applyDrop, attachDragController, type DragControllerOptions } from './d
 import { renderHelp } from './help';
 import { mountLayout } from './layout';
 import { Modal } from './modal';
+import { Tooltips } from './tooltip';
 import { Tutorial } from './tutorial';
 import { hasSeenTutorial, markTutorialSeen, puzzleSupportsTutorial } from './tutorialSteps';
 import { NotesMenu } from './notesMenu';
@@ -76,6 +77,7 @@ export class App {
   private readonly notesMenu: NotesMenu;
   private readonly helpModal: Modal;
   private readonly tutorial: Tutorial;
+  private readonly tooltips: Tooltips;
   /** Rises with every generation request, so an older one knows it has been superseded. */
   private generation = 0;
   private readonly detachDrag: () => void;
@@ -115,6 +117,7 @@ export class App {
     renderHelp(this.el['help-body']!);
     this.helpModal = new Modal(this.el['help-modal']!);
     this.tutorial = new Tutorial({ root, onFinish: () => this.setStatus('') });
+    this.tooltips = new Tooltips(root);
 
     this.detachDrag = attachDragController({
       root,
@@ -245,6 +248,7 @@ export class App {
     this.notesMenu.close();
     this.helpModal.close();
     this.tutorial.stop();
+    this.tooltips.destroy();
     this.options.root.removeEventListener('click', this.onNoteClick);
     this.options.root.ownerDocument.removeEventListener('keydown', this.onKeyDown);
   }

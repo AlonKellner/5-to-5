@@ -10,6 +10,7 @@ import {
 } from '../core/clues';
 import { CELL_COUNT } from '../core/constants';
 import type { Puzzle } from '../core/puzzle';
+import { HIDDEN_RULES } from './rulesText';
 import {
   hasSeenTutorial,
   markTutorialSeen,
@@ -52,6 +53,22 @@ describe('TUTORIAL_STEPS', () => {
     ]) {
       expect(ids, id).toContain(id);
     }
+  });
+
+  it('teaches every hidden rule, since solving needs all of them', () => {
+    const bodies = TUTORIAL_STEPS.map((step) => step.body).join('\n');
+    for (const [name, rule] of Object.entries(HIDDEN_RULES)) {
+      expect(bodies, name).toContain(rule);
+    }
+  });
+
+  it('explains the rules right after the board, before the clues', () => {
+    const ids = TUTORIAL_STEPS.map((step) => step.id);
+    const ruleSteps = ids.filter((id) => id.startsWith('rule-'));
+    expect(ruleSteps.length).toBeGreaterThanOrEqual(3);
+    const first = ids.indexOf(ruleSteps[0]!);
+    expect(ids[first - 1]).toBe('board');
+    expect(ids.indexOf(ruleSteps.at(-1)!)).toBeLessThan(ids.indexOf('locked-tile'));
   });
 
   it('only requires features that a step actually uses', () => {

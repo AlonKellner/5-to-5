@@ -52,14 +52,28 @@ describe('applyButtonIcons', () => {
     expect(button.textContent).toBe('');
     expect(button.querySelectorAll('svg.btn-icon')).toHaveLength(1);
     expect(button.getAttribute('aria-label')).toBe('New puzzle');
-    expect(button.getAttribute('title')).toBe('New puzzle');
+    expect(button.dataset['tooltip']).toBe('New puzzle');
+    // A native title tooltip would show a second, slower tooltip on top of ours.
+    expect(button.hasAttribute('title')).toBe(false);
   });
 
   it('keeps the keyboard shortcut in the tooltip of Undo', () => {
     applyButtonIcons(document.body);
     const undo = document.getElementById('undo-btn')!;
     expect(undo.getAttribute('aria-label')).toBe('Undo');
-    expect(undo.getAttribute('title')).toMatch(/Ctrl\+Z/);
+    expect(undo.dataset['tooltip']).toMatch(/Ctrl\+Z/);
+  });
+
+  it('opens tooltips upwards for buttons near the bottom of the page', () => {
+    applyButtonIcons(document.body);
+    expect(document.getElementById('share-btn')!.dataset['tooltipPosition']).toBe('above');
+    expect(document.getElementById('new-btn')!.dataset['tooltipPosition']).toBeUndefined();
+  });
+
+  it('removes a title left over in the markup', () => {
+    document.getElementById('undo-btn')!.setAttribute('title', 'old');
+    applyButtonIcons(document.body);
+    expect(document.getElementById('undo-btn')!.hasAttribute('title')).toBe(false);
   });
 
   it('ignores buttons that are not on the page', () => {

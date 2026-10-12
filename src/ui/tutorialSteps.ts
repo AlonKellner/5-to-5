@@ -1,6 +1,7 @@
 import { edgeOfSlot, EDGES, isTileSlot, SLOT_COUNT } from '../core/clues';
 import { CELL_COUNT, COLOR_COUNT, TILES_PER_COLOR } from '../core/constants';
 import type { Puzzle } from '../core/puzzle';
+import { HIDDEN_RULES as RULE } from './rulesText';
 
 /** Things a puzzle must contain for the tutorial to be able to point at them. */
 export type TutorialFeature =
@@ -27,6 +28,30 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
     title: 'The board',
     body: 'Twenty-five cells. Tiles touch when they share an edge — up, down, left or right, never diagonally.',
     target: '#game-board',
+  },
+  {
+    id: 'rule-always',
+    title: 'Hidden rule: ALWAYS',
+    body: `${RULE.count} ${RULE.always}`,
+    target: '#board-panel',
+  },
+  {
+    id: 'rule-never',
+    title: 'Hidden rule: NEVER',
+    body: `${RULE.never} ${RULE.different}`,
+    target: '#board-panel',
+  },
+  {
+    id: 'rule-both-ways',
+    title: 'Rules come in pairs',
+    body: `${RULE.mutual} ${RULE.own}`,
+    target: '#board-panel',
+  },
+  {
+    id: 'rule-only-one',
+    title: 'Exactly one of each',
+    body: RULE.unique,
+    target: '#board-panel',
   },
   {
     id: 'locked-tile',

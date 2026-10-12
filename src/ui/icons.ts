@@ -49,6 +49,8 @@ export interface ButtonIcon {
   label: string;
   /** Tooltip, when it should say more than the label. */
   title?: string;
+  /** Buttons near the bottom of the page open their tooltip upwards. */
+  tooltipPosition?: 'above';
 }
 
 /** One entry per toolbar button; the key is the button's element id. */
@@ -104,6 +106,7 @@ export const BUTTON_ICONS: Record<string, ButtonIcon> = {
   },
   'share-btn': {
     label: 'Copy a link to this puzzle',
+    tooltipPosition: 'above',
     icon: () =>
       strokeIcon(
         path('M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1'),
@@ -122,13 +125,20 @@ export const BUTTON_ICONS: Record<string, ButtonIcon> = {
   },
 };
 
-/** Replaces the text of every known button under `root` with its icon and an accessible name. */
+/**
+ * Replaces the text of every known button under `root` with its icon, an accessible name and a
+ * tooltip (rendered by CSS from data-tooltip).
+ */
 export function applyButtonIcons(root: ParentNode): void {
   for (const [id, entry] of Object.entries(BUTTON_ICONS)) {
     const button = root.querySelector<HTMLElement>(`#${id}`);
     if (!button) continue;
     button.replaceChildren(entry.icon());
     button.setAttribute('aria-label', entry.label);
-    button.setAttribute('title', entry.title ?? entry.label);
+    // Our tooltip shows instantly on hover and focus; a native title would add a second, slow one.
+    button.removeAttribute('title');
+    button.dataset['tooltip'] = entry.title ?? entry.label;
+    if (entry.tooltipPosition) button.dataset['tooltipPosition'] = entry.tooltipPosition;
+    else delete button.dataset['tooltipPosition'];
   }
 }

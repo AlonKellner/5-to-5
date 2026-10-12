@@ -59,6 +59,11 @@ test('walks through the tour from the help dialog', async ({ page }) => {
     expect(bubbleBox.y).toBeGreaterThanOrEqual(0);
     expect(bubbleBox.x + bubbleBox.width).toBeLessThanOrEqual(viewport.width + 1);
     expect(bubbleBox.y + bubbleBox.height).toBeLessThanOrEqual(viewport.height + 1);
+    if ((await page.locator('.tutorial-title').textContent()) === 'Hidden rule: ALWAYS') {
+      await page.screenshot({
+        path: `test-results/screenshots/${test.info().project.name}-tutorial-rule.png`,
+      });
+    }
     await next.click();
   }
   await expect(next).toHaveText('Done');

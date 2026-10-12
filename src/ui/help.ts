@@ -2,6 +2,7 @@ import { RELATION_SYMBOLS } from '../core/clues';
 import { COLOR_COUNT, COLOR_NAMES } from '../core/constants';
 import { DIFFICULTY_LEVELS, DIFFICULTY_NAMES } from '../core/puzzle';
 import { el } from './dom';
+import { HIDDEN_RULES } from './rulesText';
 
 const RELATION_MEANINGS = [
   'the same color',
@@ -9,16 +10,6 @@ const RELATION_MEANINGS = [
   'two steps forward in the cycle',
   'two steps back in the cycle',
   'the previous color in the cycle',
-];
-
-const RULES = [
-  'Every color has exactly one ALWAYS color and exactly one NEVER color. Finding those ten facts is the puzzle.',
-  'ALWAYS means every tile of that color touches at least one tile of its ALWAYS color — no exceptions.',
-  'NEVER means no tile of that color touches the NEVER color anywhere on the board.',
-  'The pairing goes both ways: if red always touches blue, blue always touches red. The same holds for NEVER.',
-  'A color can be its own ALWAYS color (its tiles always touch each other) or its own NEVER color (its tiles never touch each other).',
-  'A color’s ALWAYS color is always different from its NEVER color.',
-  'Only one color touches all five tiles of a color, and only one color touches none of them. If two colors touched every tile of red, the board would be wrong.',
 ];
 
 function section(title: string, ...children: (Node | null)[]): HTMLElement {
@@ -78,7 +69,7 @@ export function renderHelp(container: HTMLElement): void {
         'Every puzzle has exactly one solution, so you never have to guess blindly.',
       ]),
     ),
-    section('The hidden rules', bullets(RULES)),
+    section('The hidden rules', bullets(Object.values(HIDDEN_RULES))),
     section(
       'Reading the clues',
       el('p', {

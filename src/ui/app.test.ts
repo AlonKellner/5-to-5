@@ -177,8 +177,16 @@ describe('App', () => {
         expect(button.querySelectorAll('svg.btn-icon'), id).toHaveLength(1);
         expect(button.textContent!.trim(), id).toBe('');
         expect(button.getAttribute('aria-label')?.length, id).toBeGreaterThan(0);
-        expect(button.getAttribute('title')?.length, id).toBeGreaterThan(0);
+        expect(button.dataset['tooltip']?.length, id).toBeGreaterThan(0);
       }
+    });
+
+    it('names a button in a tooltip while the pointer is over it', () => {
+      const event = new MouseEvent('pointerover', { bubbles: true });
+      Object.defineProperty(event, 'pointerType', { value: 'mouse' });
+      $('#clue-btn svg').dispatchEvent(event);
+      expect($('.tooltip').hidden).toBe(false);
+      expect($('.tooltip').textContent).toBe('Reveal a clue');
     });
 
     it('keeps the difficulty levels readable as text', () => {
