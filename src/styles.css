@@ -494,7 +494,7 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: calc(var(--cell) * 0.45);
+  font-size: calc(var(--cell) * 0.38);
   font-weight: 700;
   line-height: 1;
   color: white;
@@ -511,8 +511,8 @@ body {
   position: absolute;
   inset: 0;
   margin: auto;
-  width: 72%;
-  height: 72%;
+  width: 82%;
+  height: 82%;
   fill: rgb(0 0 0 / 0.3);
   pointer-events: none;
 }
@@ -529,14 +529,14 @@ body {
 }
 
 .note-dot .color-shape {
-  width: 78%;
-  height: 78%;
+  width: 86%;
+  height: 86%;
   fill: rgb(0 0 0 / 0.4);
 }
 
 .note-option .color-shape {
-  width: 55%;
-  height: 55%;
+  width: 64%;
+  height: 64%;
 }
 
 .relation-slot {
