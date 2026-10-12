@@ -5,7 +5,7 @@ import { COLOR_SHAPES, colorShape, SHAPE_POLYGONS } from './shapes';
 
 describe('colorShape', () => {
   it('gives each color its own shape', () => {
-    expect(COLOR_SHAPES).toEqual(['circle', 'square', 'triangle', 'diamond', 'pentagon']);
+    expect(COLOR_SHAPES).toEqual(['circle', 'square', 'trapezoid', 'diamond', 'pentagon']);
     expect(COLOR_SHAPES).toHaveLength(COLOR_COUNT);
     const outlines = COLOR_SHAPES.map((_, color) => colorShape(color).innerHTML);
     expect(new Set(outlines).size).toBe(COLOR_COUNT);
@@ -15,7 +15,7 @@ describe('colorShape', () => {
     const shape = colorShape(2);
     expect(shape.tagName).toBe('svg');
     expect(shape.getAttribute('class')).toBe('color-shape');
-    expect(shape.dataset['shape']).toBe('triangle');
+    expect(shape.dataset['shape']).toBe('trapezoid');
     expect(shape.getAttribute('viewBox')).toBe('0 0 100 100');
     expect(shape.getAttribute('aria-hidden')).toBe('true');
     expect(shape.getAttribute('width')).toBeNull();
@@ -39,15 +39,25 @@ describe('colorShape', () => {
     }
   });
 
-  it('draws an equilateral triangle and a regular pentagon', () => {
-    const sides = (points: readonly (readonly [number, number])[]) =>
-      points.map(([x0, y0], i) => {
-        const [x1, y1] = points[(i + 1) % points.length]!;
-        return Math.hypot(x1 - x0, y1 - y0);
-      });
-    for (const name of ['triangle', 'pentagon'] as const) {
-      const lengths = sides(SHAPE_POLYGONS[name]);
-      for (const length of lengths) expect(length, name).toBeCloseTo(lengths[0]!, 1);
+  it('draws a regular pentagon', () => {
+    const points = SHAPE_POLYGONS.pentagon;
+    const lengths = points.map(([x0, y0], i) => {
+      const [x1, y1] = points[(i + 1) % points.length]!;
+      return Math.hypot(x1 - x0, y1 - y0);
+    });
+    for (const length of lengths) expect(length).toBeCloseTo(lengths[0]!, 1);
+  });
+
+  it('draws a symmetric trapezoid, wider at the bottom, inside the box', () => {
+    const [topLeft, topRight, bottomRight, bottomLeft] = SHAPE_POLYGONS.trapezoid;
+    expect(topLeft![1]).toBeCloseTo(topRight![1]);
+    expect(bottomLeft![1]).toBeCloseTo(bottomRight![1]);
+    expect(50 - topLeft![0]).toBeCloseTo(topRight![0] - 50);
+    expect(50 - bottomLeft![0]).toBeCloseTo(bottomRight![0] - 50);
+    expect(bottomRight![0] - bottomLeft![0]).toBeGreaterThan(topRight![0] - topLeft![0]);
+    for (const [x, y] of SHAPE_POLYGONS.trapezoid) {
+      expect(Math.min(x, y)).toBeGreaterThanOrEqual(0);
+      expect(Math.max(x, y)).toBeLessThanOrEqual(100);
     }
   });
 });

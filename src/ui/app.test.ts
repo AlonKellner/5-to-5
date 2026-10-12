@@ -138,7 +138,7 @@ describe('App', () => {
       }
       expect(spawnerCount(2)).toBe(0);
       const bin = $('#spawner-grid [data-color="2"] .spawner-empty');
-      expect(bin.querySelector<SVGElement>('.color-shape')!.dataset['shape']).toBe('triangle');
+      expect(bin.querySelector<SVGElement>('.color-shape')!.dataset['shape']).toBe('trapezoid');
     });
 
     it('renders relation clues on the grid lines between their cells', () => {
@@ -267,7 +267,7 @@ describe('App', () => {
       ($$('.note-option')[2] as HTMLElement).click();
       expect(cell(0).querySelectorAll('.note-dot')).toHaveLength(1);
       expect(cell(0).querySelector('.note-dot')!.classList.contains('color-2')).toBe(true);
-      expect(colorAndShape(cell(0).querySelector('.note-dot')!)).toEqual([2, 'triangle']);
+      expect(colorAndShape(cell(0).querySelector('.note-dot')!)).toEqual([2, 'trapezoid']);
       pointer('pointerdown', $('h1'));
       expect($$('.note-menu')).toHaveLength(0);
     });

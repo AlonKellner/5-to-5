@@ -514,8 +514,6 @@ body {
   width: 82%;
   height: 82%;
   fill: rgb(0 0 0 / 0.3);
-  /* The triangle is centred on its center of mass, so its tip reaches past the box. */
-  overflow: visible;
   pointer-events: none;
 }
 

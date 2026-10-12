@@ -1,7 +1,7 @@
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /** One shape per color, in color order, so colors can be told apart without seeing them. */
-export const COLOR_SHAPES = ['circle', 'square', 'triangle', 'diamond', 'pentagon'] as const;
+export const COLOR_SHAPES = ['circle', 'square', 'trapezoid', 'diamond', 'pentagon'] as const;
 
 type Point = readonly [number, number];
 
@@ -17,13 +17,27 @@ function regularPolygon(corners: number, radius: number, firstAngle: number): Po
   });
 }
 
+/**
+ * An isosceles trapezoid, `top` and `bottom` wide and `height` tall, placed so its center of mass
+ * (not the middle of its height) is at the middle of the box.
+ */
+function trapezoid(top: number, bottom: number, height: number): Point[] {
+  const fromBottom = (height * (bottom + 2 * top)) / (3 * (top + bottom));
+  const base = 50 + fromBottom;
+  const roof = base - height;
+  return [
+    [50 - top / 2, roof],
+    [50 + top / 2, roof],
+    [50 + bottom / 2, base],
+    [50 - bottom / 2, base],
+  ];
+}
+
 /** Polygon corners in the 100×100 box, sized so the shapes look about equally large. */
 export const SHAPE_POLYGONS = {
   // A 76-wide square.
   square: regularPolygon(4, 38 * Math.SQRT2, 45),
-  // An equilateral triangle with 100-long sides, pointing up. Centred on its center of mass, its
-  // tip pokes slightly above the box, which the stylesheet lets show.
-  triangle: regularPolygon(3, 100 / Math.sqrt(3), -90),
+  trapezoid: trapezoid(52, 96, 72),
   diamond: regularPolygon(4, 48, -90),
   pentagon: regularPolygon(5, 48, -90),
 } satisfies Partial<Record<(typeof COLOR_SHAPES)[number], Point[]>>;
@@ -34,7 +48,7 @@ const polygonPath = (points: readonly Point[]) =>
 const OUTLINES: Record<(typeof COLOR_SHAPES)[number], string> = {
   circle: 'M6 50a44 44 0 1 0 88 0a44 44 0 1 0 -88 0z',
   square: polygonPath(SHAPE_POLYGONS.square),
-  triangle: polygonPath(SHAPE_POLYGONS.triangle),
+  trapezoid: polygonPath(SHAPE_POLYGONS.trapezoid),
   diamond: polygonPath(SHAPE_POLYGONS.diamond),
   pentagon: polygonPath(SHAPE_POLYGONS.pentagon),
 };

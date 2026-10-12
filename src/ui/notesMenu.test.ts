@@ -41,7 +41,7 @@ describe('NotesMenu', () => {
     expect(shapes.map((shape) => shape.dataset['shape'])).toEqual([
       'circle',
       'square',
-      'triangle',
+      'trapezoid',
       'diamond',
       'pentagon',
     ]);
