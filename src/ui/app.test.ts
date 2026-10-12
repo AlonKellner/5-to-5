@@ -577,6 +577,8 @@ describe('App', () => {
       expect(cell(0).classList.contains('drop-zone')).toBe(true);
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', metaKey: true }));
       expect($$('.tutorial-bubble')).toHaveLength(1);
+      cell(0).click();
+      expect($$('.note-menu')).toHaveLength(0);
     });
 
     it('stops when the app is destroyed', async () => {

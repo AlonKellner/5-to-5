@@ -378,7 +378,7 @@ export class App {
 
   private readonly onNoteClick = (event: MouseEvent) => {
     const target = (event.target as Element).closest<HTMLElement>('[data-note]');
-    if (!target || !this.state) return;
+    if (!target || !this.state || this.tutorial.isRunning) return;
     const point = { x: event.clientX, y: event.clientY };
     if (target.dataset['note'] === 'cell') {
       const cell = Number(target.dataset['cell']);
