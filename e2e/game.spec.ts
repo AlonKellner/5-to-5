@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
+  box,
   cell,
   center,
   dragTo,
@@ -136,4 +137,41 @@ test('undoes moves and checks for mistakes', async ({ page }) => {
   await page.locator('#undo-btn').click();
   await expect(cell(page, index)).toHaveClass(/drop-zone/);
   await expect(page.locator('#undo-btn')).toBeDisabled();
+});
+
+test('keeps top and bottom notes in their own halves', async ({ page }, info) => {
+  await page.goto('./?d=3');
+  await waitForPuzzle(page);
+  const square = page.locator('#game-board > .drop-zone').first();
+  const option = (color: number) => page.locator('.note-option').nth(color);
+  await square.click();
+  // A full top half and a two-color bottom half: the most crowded halves look like.
+  for (const color of [0, 1, 2, 3, 4]) await option(color).click();
+  await page.locator('.note-half-toggle').click();
+  await expect(page.locator('.note-half-toggle')).toHaveAttribute('data-half', 'bottom');
+  for (const color of [1, 3]) await option(color).click();
+  await page.screenshot({ path: `test-results/screenshots/${info.project.name}-note-halves.png` });
+  await page.locator('h1').click();
+
+  const outline = await box(square);
+  const middle = outline.y + outline.height / 2;
+  const top = await square.locator('.note-half-top .note-dot').all();
+  const bottom = await square.locator('.note-half-bottom .note-dot').all();
+  expect(top).toHaveLength(5);
+  expect(bottom).toHaveLength(2);
+  for (const dot of top) {
+    const b = await box(dot);
+    expect(b.y).toBeGreaterThanOrEqual(outline.y);
+    expect(b.y + b.height).toBeLessThanOrEqual(middle);
+  }
+  for (const dot of bottom) {
+    const b = await box(dot);
+    expect(b.y).toBeGreaterThanOrEqual(middle);
+    expect(b.y + b.height).toBeLessThanOrEqual(outline.y + outline.height);
+  }
+
+  const divider = await box(square.locator('.note-divider'));
+  expect(Math.abs(divider.y + divider.height / 2 - middle)).toBeLessThanOrEqual(1);
+  expect(divider.x).toBeGreaterThan(outline.x + 4);
+  expect(divider.x + divider.width).toBeLessThan(outline.x + outline.width - 4);
 });

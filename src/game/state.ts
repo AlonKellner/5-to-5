@@ -7,13 +7,29 @@ export const SPAWNER_NOTE_SLOTS = 2;
 
 export type GameStatus = 'playing' | 'won' | 'revealed';
 
+/** Every note square has a top and a bottom half, each with its own set of colors. */
+export type NoteHalf = 'top' | 'bottom';
+
+/** Bottom-half colors sit above the top-half ones in a note mask; old saves are all top half. */
+const BOTTOM_SHIFT = COLOR_COUNT;
+const HALF_MASK = (1 << COLOR_COUNT) - 1;
+const MAX_NOTE_MASK = (1 << (2 * COLOR_COUNT)) - 1;
+
+const noteBit = (color: number, half: NoteHalf) =>
+  1 << (color + (half === 'bottom' ? BOTTOM_SHIFT : 0));
+
+/** Splits a note mask into the colors noted in each half. */
+export function noteHalves(mask: number): Record<NoteHalf, number> {
+  return { top: mask & HALF_MASK, bottom: (mask >> BOTTOM_SHIFT) & HALF_MASK };
+}
+
 interface Progress {
   /** Color per cell, -1 when empty. */
   readonly cells: Int8Array;
-  /** Note bitmask per cell. */
-  readonly gridNotes: Uint8Array;
+  /** Note bitmask per cell: top-half colors in the low bits, bottom-half colors above them. */
+  readonly gridNotes: Uint16Array;
   /** Note bitmask per color and slot: index color * SPAWNER_NOTE_SLOTS + slot. */
-  readonly spawnerNotes: Uint8Array;
+  readonly spawnerNotes: Uint16Array;
 }
 
 /** Immutable game state; every operation returns a new state (or the same one if nothing changed). */
@@ -40,8 +56,8 @@ export function createGame(puzzle: { solution: Board; mask: ClueMask }): GameSta
     mask: puzzle.mask,
     cells,
     locked,
-    gridNotes: new Uint8Array(CELL_COUNT),
-    spawnerNotes: new Uint8Array(COLOR_COUNT * SPAWNER_NOTE_SLOTS),
+    gridNotes: new Uint16Array(CELL_COUNT),
+    spawnerNotes: new Uint16Array(COLOR_COUNT * SPAWNER_NOTE_SLOTS),
     checkpoint: null,
     status: 'playing',
   };
@@ -90,9 +106,14 @@ export function returnToTray(state: GameState, cell: number): GameState {
   return withCells(state, cells);
 }
 
-export function toggleGridNote(state: GameState, cell: number, color: number): GameState {
+export function toggleGridNote(
+  state: GameState,
+  cell: number,
+  color: number,
+  half: NoteHalf = 'top',
+): GameState {
   const gridNotes = state.gridNotes.slice();
-  gridNotes[cell]! ^= 1 << color;
+  gridNotes[cell]! ^= noteBit(color, half);
   return { ...state, gridNotes };
 }
 
@@ -101,9 +122,10 @@ export function toggleSpawnerNote(
   color: number,
   slot: number,
   noteColor: number,
+  half: NoteHalf = 'top',
 ): GameState {
   const spawnerNotes = state.spawnerNotes.slice();
-  spawnerNotes[color * SPAWNER_NOTE_SLOTS + slot]! ^= 1 << noteColor;
+  spawnerNotes[color * SPAWNER_NOTE_SLOTS + slot]! ^= noteBit(noteColor, half);
   return { ...state, spawnerNotes };
 }
 
@@ -243,8 +265,8 @@ export function deserializeGame(
   const validProgress = (p: Partial<SerializedGame['checkpoint']> | null | undefined) =>
     !!p &&
     isIntArray(p.cells, CELL_COUNT, -1, COLOR_COUNT - 1) &&
-    isIntArray(p.gridNotes, CELL_COUNT, 0, 31) &&
-    isIntArray(p.spawnerNotes, noteSlots, 0, 31);
+    isIntArray(p.gridNotes, CELL_COUNT, 0, MAX_NOTE_MASK) &&
+    isIntArray(p.spawnerNotes, noteSlots, 0, MAX_NOTE_MASK);
   if (
     !validProgress(d as SerializedGame['checkpoint']) ||
     !isIntArray(d.locked, CELL_COUNT, 0, 1)
@@ -267,13 +289,13 @@ export function deserializeGame(
     mask: puzzle.mask,
     cells,
     locked,
-    gridNotes: Uint8Array.from(d.gridNotes!),
-    spawnerNotes: Uint8Array.from(d.spawnerNotes!),
+    gridNotes: Uint16Array.from(d.gridNotes!),
+    spawnerNotes: Uint16Array.from(d.spawnerNotes!),
     checkpoint: d.checkpoint
       ? {
           cells: Int8Array.from(d.checkpoint.cells),
-          gridNotes: Uint8Array.from(d.checkpoint.gridNotes),
-          spawnerNotes: Uint8Array.from(d.checkpoint.spawnerNotes),
+          gridNotes: Uint16Array.from(d.checkpoint.gridNotes),
+          spawnerNotes: Uint16Array.from(d.checkpoint.spawnerNotes),
         }
       : null,
     status: d.status!,

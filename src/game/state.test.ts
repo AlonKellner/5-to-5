@@ -7,6 +7,7 @@ import {
   deserializeGame,
   findMistakes,
   moveTile,
+  noteHalves,
   placeFromTray,
   restoreCheckpoint,
   returnToTray,
@@ -118,6 +119,26 @@ describe('notes', () => {
     expect(s.spawnerNotes[3 * 2 + 0]).toBe(0b10000);
     expect(game.spawnerNotes.every((n) => n === 0)).toBe(true);
   });
+
+  it('keeps top and bottom notes of a square apart', () => {
+    let s = toggleGridNote(game, 0, 2, 'top');
+    s = toggleGridNote(s, 0, 2, 'bottom');
+    s = toggleGridNote(s, 0, 4, 'bottom');
+    expect(noteHalves(s.gridNotes[0]!)).toEqual({ top: 0b00100, bottom: 0b10100 });
+    s = toggleGridNote(s, 0, 2, 'bottom');
+    expect(noteHalves(s.gridNotes[0]!)).toEqual({ top: 0b00100, bottom: 0b10000 });
+  });
+
+  it('writes in the top half unless told otherwise', () => {
+    expect(toggleGridNote(game, 0, 1).gridNotes[0]).toBe(
+      toggleGridNote(game, 0, 1, 'top').gridNotes[0],
+    );
+  });
+
+  it('has top and bottom notes under the bins too', () => {
+    const s = toggleSpawnerNote(toggleSpawnerNote(game, 3, 1, 0, 'bottom'), 3, 1, 4, 'top');
+    expect(noteHalves(s.spawnerNotes[3 * 2 + 1]!)).toEqual({ top: 0b10000, bottom: 0b00001 });
+  });
 });
 
 describe('checkpoints', () => {
@@ -219,6 +240,8 @@ describe('serialization', () => {
     s = placeFromTray(s, 0, 0);
     s = toggleGridNote(s, 2, 3);
     s = toggleSpawnerNote(s, 1, 1, 4);
+    s = toggleGridNote(s, 2, 4, 'bottom');
+    s = toggleSpawnerNote(s, 0, 0, 0, 'bottom');
     s = saveCheckpoint(s);
     s = revealHint(s, new Rng('ser'));
     const restored = deserializeGame(puzzle, JSON.parse(JSON.stringify(serializeGame(s))));
@@ -228,6 +251,7 @@ describe('serialization', () => {
     expect([...restored!.gridNotes]).toEqual([...s.gridNotes]);
     expect([...restored!.spawnerNotes]).toEqual([...s.spawnerNotes]);
     expect([...restored!.checkpoint!.cells]).toEqual([...s.checkpoint!.cells]);
+    expect([...restored!.checkpoint!.gridNotes]).toEqual([...s.checkpoint!.gridNotes]);
     expect(restored!.status).toBe(s.status);
   });
 
@@ -239,6 +263,18 @@ describe('serialization', () => {
     // A clue tile of the puzzle must stay locked in place.
     expect(deserializeGame(puzzle, { ...good, locked: good.locked.map(() => 0) })).toBeNull();
     expect(deserializeGame(puzzle, { ...good, status: 'bogus' })).toBeNull();
+    const notes = (value: number) => good.gridNotes.map(() => value);
+    expect(deserializeGame(puzzle, { ...good, gridNotes: notes(1024) })).toBeNull();
+    expect(deserializeGame(puzzle, { ...good, gridNotes: notes(-1) })).toBeNull();
+  });
+
+  it('loads games saved before notes had halves, as top-half notes', () => {
+    const old = serializeGame(toggleGridNote(createGame(puzzle), 0, 3));
+    expect(old.gridNotes[0]).toBe(0b01000);
+    const restored = deserializeGame(puzzle, old)!;
+    expect(noteHalves(restored.gridNotes[0]!)).toEqual({ top: 0b01000, bottom: 0 });
+    const full = deserializeGame(puzzle, { ...old, gridNotes: old.gridNotes.map(() => 1023) });
+    expect(noteHalves(full!.gridNotes[0]!)).toEqual({ top: 31, bottom: 31 });
   });
 });
 

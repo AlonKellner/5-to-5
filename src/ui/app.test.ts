@@ -287,6 +287,51 @@ describe('App', () => {
       expect(updated.querySelectorAll('.note-dot')).toHaveLength(2);
       expect(updated.textContent).toBe('');
     });
+
+    describe('top and bottom halves', () => {
+      const option = (color: number) => $$('.note-option')[color] as HTMLElement;
+      const switchHalf = () => $('.note-half-toggle').click();
+      const dots = (node: Element, half: 'top' | 'bottom') =>
+        [...node.querySelectorAll(`.note-half-${half} .note-dot`)].map((d) =>
+          Number(/color-(\d)/.exec(d.className)![1]),
+        );
+
+      it('puts top notes in the top half and bottom notes in the bottom half', () => {
+        cell(0).click();
+        option(1).click();
+        switchHalf();
+        option(3).click();
+        option(4).click();
+        expect(dots(cell(0), 'top')).toEqual([1]);
+        expect(dots(cell(0), 'bottom')).toEqual([3, 4]);
+      });
+
+      it('draws a divider only when both halves have notes', () => {
+        cell(0).click();
+        option(1).click();
+        expect(cell(0).querySelector('.note-divider')).toBeNull();
+        expect(dots(cell(0), 'top')).toEqual([1]);
+        switchHalf();
+        option(2).click();
+        expect(cell(0).querySelector('.note-divider')).not.toBeNull();
+        switchHalf();
+        option(1).click();
+        expect(cell(0).querySelector('.note-divider')).toBeNull();
+        expect(dots(cell(0), 'bottom')).toEqual([2]);
+        expect(cell(0).querySelector('.note-half-top')).toBeNull();
+      });
+
+      it('works in the notes under the bins, and undo takes a bottom note back', () => {
+        const noteCell = () => $('#spawner-notes-grid [data-color="0"][data-slot="0"]');
+        noteCell().click();
+        switchHalf();
+        option(2).click();
+        expect(dots(noteCell(), 'bottom')).toEqual([2]);
+        $('#undo-btn').click();
+        expect(noteCell().querySelector('.note-dot')).toBeNull();
+        expect(noteCell().textContent).toContain('Notes');
+      });
+    });
   });
 
   describe('controls', () => {

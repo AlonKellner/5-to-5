@@ -386,16 +386,16 @@ export class App {
     const point = { x: event.clientX, y: event.clientY };
     if (target.dataset['note'] === 'cell') {
       const cell = Number(target.dataset['cell']);
-      this.notesMenu.open(point, this.state.gridNotes[cell]!, (color) => {
-        this.update((s) => toggleGridNote(s, cell, color));
+      this.notesMenu.open(point, this.state.gridNotes[cell]!, (color, half) => {
+        this.update((s) => toggleGridNote(s, cell, color, half));
         return this.state!.gridNotes[cell]!;
       });
     } else {
       const color = Number(target.dataset['color']);
       const slot = Number(target.dataset['slot']);
       const index = color * SPAWNER_NOTE_SLOTS + slot;
-      this.notesMenu.open(point, this.state.spawnerNotes[index]!, (noteColor) => {
-        this.update((s) => toggleSpawnerNote(s, color, slot, noteColor));
+      this.notesMenu.open(point, this.state.spawnerNotes[index]!, (noteColor, half) => {
+        this.update((s) => toggleSpawnerNote(s, color, slot, noteColor, half));
         return this.state!.spawnerNotes[index]!;
       });
     }

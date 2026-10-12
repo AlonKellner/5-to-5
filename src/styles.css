@@ -651,25 +651,53 @@ body {
 .note-container {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 3px;
-  padding: 4px;
   pointer-events: none;
 }
 
+/* Each half of a note square holds its own colors, centred in that half. */
+.note-half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 2px;
+  padding: 2px 3px;
+}
+
+.note-half-top {
+  top: 0;
+}
+
+.note-half-bottom {
+  bottom: 0;
+}
+
+/* Like a rule between paragraphs: it marks the split without reaching the square's outline. */
+.note-divider {
+  position: absolute;
+  top: 50%;
+  left: 18%;
+  right: 18%;
+  height: 1px;
+  margin-top: -0.5px;
+  border-radius: 1px;
+  background: var(--gray-400);
+}
+
 .note-dot {
-  width: clamp(8px, calc(var(--cell) * 0.26), 1.1rem);
-  height: clamp(8px, calc(var(--cell) * 0.26), 1.1rem);
+  width: clamp(6px, calc(var(--cell) * 0.18), 0.85rem);
+  height: clamp(6px, calc(var(--cell) * 0.18), 0.85rem);
   border-radius: 9999px;
 }
 
 .note-menu {
   position: fixed;
   z-index: 60;
-  min-width: 120px;
+  width: 120px;
   padding: 8px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -690,10 +718,42 @@ body {
     box-shadow 0.1s;
 }
 
-.note-option:last-child:nth-child(5) {
-  grid-column: 1 / span 2;
-  width: calc(50% - 4px);
-  justify-self: center;
+.note-half-toggle {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: var(--gray-700);
+  color: white;
+  cursor: pointer;
+}
+
+.half-icon {
+  width: 70%;
+  height: 70%;
+}
+
+.half-outline {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.half-highlight {
+  fill: currentColor;
+  transition: transform 0.15s ease;
+}
+
+.note-half-toggle[data-half='top'] .half-highlight {
+  transform: translateY(4px);
+}
+
+.note-half-toggle[data-half='bottom'] .half-highlight {
+  transform: translateY(12px);
 }
 
 .note-option.selected {
@@ -787,7 +847,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .tutorial-spotlight,
-  .piece {
+  .piece,
+  .half-highlight {
     transition: none;
   }
   .piece.mistake {

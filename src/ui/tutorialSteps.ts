@@ -63,7 +63,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: 'empty-cell',
     title: 'Empty cells',
-    body: 'Drag a color here to place it, drag it away to move it, or tap a placed tile to send it back. Tapping an empty cell lets you pencil in colors you are considering.',
+    body: 'Drag a color here to place it, drag it away to move it, or tap a placed tile to send it back. Tapping an empty cell lets you pencil in colors you are considering; the last button in that menu switches between the top and bottom half of the cell, so you can keep two sets of ideas apart.',
     target: '#game-board > .drop-zone',
     requires: ['empty-cell'],
   },

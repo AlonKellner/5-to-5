@@ -1,17 +1,30 @@
 import { EDGES, RELATION_SYMBOLS, slotOfEdge, clueAt, EDGE_COUNT } from '../core/clues';
 import { CELL_COUNT, COLOR_COUNT, colOf, rowOf } from '../core/constants';
-import { SPAWNER_NOTE_SLOTS, trayCount, type GameState } from '../game/state';
+import { noteHalves, SPAWNER_NOTE_SLOTS, trayCount, type GameState } from '../game/state';
 import { el, lockIcon } from './dom';
 import { colorShape } from './shapes';
 
-function noteDots(mask: number): HTMLElement | null {
-  if (!mask) return null;
-  const container = el('div', { className: 'note-container' });
+function halfDots(colors: number, half: 'top' | 'bottom'): HTMLElement | null {
+  if (!colors) return null;
+  const dots: HTMLElement[] = [];
   for (let color = 0; color < COLOR_COUNT; color++) {
-    if (!(mask & (1 << color))) continue;
-    container.appendChild(el('div', { className: `note-dot color-${color}` }, [colorShape(color)]));
+    if (colors & (1 << color)) {
+      dots.push(el('div', { className: `note-dot color-${color}` }, [colorShape(color)]));
+    }
   }
-  return container;
+  return el('div', { className: `note-half note-half-${half}` }, dots);
+}
+
+/** Top-half notes fill the top of the square and bottom-half notes the bottom, split by a line
+ *  only when both halves are in use. */
+function noteDots(mask: number): HTMLElement | null {
+  const { top, bottom } = noteHalves(mask);
+  if (!top && !bottom) return null;
+  return el('div', { className: 'note-container' }, [
+    halfDots(top, 'top'),
+    top && bottom ? el('div', { className: 'note-divider' }) : null,
+    halfDots(bottom, 'bottom'),
+  ]);
 }
 
 function relationBadge(symbol: string, placement: Record<string, string>, className = '') {
