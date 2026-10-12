@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { COLOR_COUNT } from '../core/constants';
-import { COLOR_SHAPES, colorShape } from './shapes';
+import { COLOR_SHAPES, colorShape, SHAPE_POLYGONS } from './shapes';
 
 describe('colorShape', () => {
   it('gives each color its own shape', () => {
@@ -19,5 +19,35 @@ describe('colorShape', () => {
     expect(shape.getAttribute('viewBox')).toBe('0 0 100 100');
     expect(shape.getAttribute('aria-hidden')).toBe('true');
     expect(shape.getAttribute('width')).toBeNull();
+  });
+
+  it('centers every polygon on its center of mass', () => {
+    for (const [name, points] of Object.entries(SHAPE_POLYGONS)) {
+      // Area-weighted centroid of a simple polygon (shoelace formula).
+      let area = 0;
+      let cx = 0;
+      let cy = 0;
+      points.forEach(([x0, y0], i) => {
+        const [x1, y1] = points[(i + 1) % points.length]!;
+        const cross = x0 * y1 - x1 * y0;
+        area += cross / 2;
+        cx += ((x0 + x1) * cross) / 6;
+        cy += ((y0 + y1) * cross) / 6;
+      });
+      expect(cx / area, name).toBeCloseTo(50, 1);
+      expect(cy / area, name).toBeCloseTo(50, 1);
+    }
+  });
+
+  it('draws an equilateral triangle and a regular pentagon', () => {
+    const sides = (points: readonly (readonly [number, number])[]) =>
+      points.map(([x0, y0], i) => {
+        const [x1, y1] = points[(i + 1) % points.length]!;
+        return Math.hypot(x1 - x0, y1 - y0);
+      });
+    for (const name of ['triangle', 'pentagon'] as const) {
+      const lengths = sides(SHAPE_POLYGONS[name]);
+      for (const length of lengths) expect(length, name).toBeCloseTo(lengths[0]!, 1);
+    }
   });
 });
